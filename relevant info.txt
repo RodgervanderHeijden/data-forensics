@@ -2,7 +2,13 @@ Marketplace:
 Torrez
 
 Accessible via:
-
-
+yxuy5oau7nugw4kpb4lclrqdbixp3wvc4iuiad23ebyp2q3gx7rtrgqd.onion
+f3dxwzcmojrlphehqwcecwe3amg6rkzgilcn4xqxmaiezoedijf6rtid.onion
+lstkx6p3gzsgfwsqpntlv7tv4tsjzziwp76gvkaxx2mqe3whvlp243id.onion
+333f7gpuishjximodvynnoisxujicgwaetzywgkxoxuje5ph3qyqjuid.onion
 
 Account info:
+name: anoniempje
+p: anoniempje
+pin: 9753
+mnenomic: fly mercy learn armed budget media ozone text bacon rude obvious illness
