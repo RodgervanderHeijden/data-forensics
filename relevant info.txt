@@ -12,3 +12,11 @@ name: anoniempje
 p: anoniempje
 pin: 9753
 mnenomic: fly mercy learn armed budget media ozone text bacon rude obvious illness
+
+-----
+
+
+https://askubuntu.com/questions/1140770/this-system-is-currently-not-set-up-to-build-kernel-modules-please-install-the
+https://askubuntu.com/a/1140786
+
+https://linuxize.com/post/how-to-install-tor-browser-on-ubuntu-20-04/
