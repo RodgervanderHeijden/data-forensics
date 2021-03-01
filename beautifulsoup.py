@@ -2,8 +2,8 @@ import socks
 import socket
 import requests
 from bs4 import BeautifulSoup
+import time
 
-from urllib.request import urlopen
 socks.set_default_proxy(socks.SOCKS5, "localhost", 9050) # one source said port 9150, Georgia's code used 9050
 socket.socket = socks.socksocket
 
@@ -39,8 +39,40 @@ web_page = s.get(url, cookies=cookies, proxies=proxies)
 soup = BeautifulSoup(web_page.content, 'html.parser')
 #print(soup.prettify())
 
+
+user_profiles = []
+
 for a in soup.find_all('a', href=True):
-    print(a['href'])
-#all_links = soup.find_all("a")
-# soup.title
-#
+    if 'profile' in a['href']:
+        user_profiles.append(a['href'])
+
+vendor_offers = []
+
+for profile in user_profiles[2:5]:
+    #time.sleep(1)
+    print(profile)
+    web_page = s.get(profile, cookies=cookies, proxies=proxies)
+    soup = BeautifulSoup(web_page.content, 'html.parser')
+    for a in soup.find_all('a', href=True):
+        if 'items' in a['href'] and 'vendor' in a['href']:
+            vendor_offers.append(a['href'])
+
+all_titles = []
+all_prices = []
+
+for drug_offer in vendor_offers:
+    print(drug_offer)
+    #time.sleep(3)
+    web_page = s.get(drug_offer, cookies=cookies, proxies=proxies)
+    soup = BeautifulSoup(web_page.content, 'html.parser')
+    for a in soup.find_all('a', href=True, class_='title'):
+        all_titles.append(a.text.strip())
+
+    for price in soup.find_all('span', class_='Price'):
+        all_prices.append(price.text.strip())
+
+
+results = (list(zip(all_titles, all_prices)))
+
+for i in results:
+    print(i)
