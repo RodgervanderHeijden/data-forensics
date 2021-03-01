@@ -20,3 +20,22 @@ https://askubuntu.com/questions/1140770/this-system-is-currently-not-set-up-to-b
 https://askubuntu.com/a/1140786
 
 https://linuxize.com/post/how-to-install-tor-browser-on-ubuntu-20-04/
+
+----------
+
+https://justhackerthings.com/post/using-tor-from-the-command-line/
+https://justhackerthings.com/post/building-a-dark-web-scraper/
+https://www.linkedin.com/pulse/scraping-onion-websites-from-darknet-using-tor-python-stephan-fleig/
+
+
+--------------
+
+http://worldps45uh3rhedmx7g3jgjf3vw52wkvvcastfm46fzrpwoc7f33lid.onion/register_now
+"Click if not redirected"
+
+http://yxuy5oau7nugw4kpb4lclrqdbixp3wvc4iuiad23ebyp2q3gx7rtrgqd.onion/items/category/fraud
+"Please wait..."
+
+http://asap4u2ihsunfdsumm66pmado3mt3lemdiu3fbx5b7wj5hb3xpgmwkqd.onion/
+"Verifying
+Verifying captcha... You will be automatically redirected to captcha page. Click here to continue."
