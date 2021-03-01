@@ -3,6 +3,7 @@ import socket
 import requests
 from bs4 import BeautifulSoup
 import time
+import re
 
 socks.set_default_proxy(socks.SOCKS5, "localhost", 9050) # one source said port 9150, Georgia's code used 9050
 socket.socket = socks.socksocket
@@ -41,8 +42,9 @@ for a in soup.find_all('a', href=True):
 
 vendor_offers = []
 all_titles = []
+all_quantities = []
 all_prices = []
-for profile in user_profiles[2:6]:
+for profile in user_profiles[2:3]:
     time.sleep(1)
     web_page = s.get(profile, cookies=cookies, proxies=proxies)
     soup = BeautifulSoup(web_page.content, 'html.parser')
@@ -54,7 +56,7 @@ for profile in user_profiles[2:6]:
     print("Feedback received: " + soup.find(text="Total Feedback Received").findNext('td').contents[0])
     print("Positive feedback ratio: " + soup.find(text="Positive Feedback Received Ratio").findNext('td').contents[0])
 
-    for drug_offer in vendor_offers[0:3]:
+    for drug_offer in vendor_offers[0:2]:
         time.sleep(2)
         no_of_offers_vendor = 0
         web_page = s.get(drug_offer, cookies=cookies, proxies=proxies)
@@ -62,14 +64,30 @@ for profile in user_profiles[2:6]:
         for a in soup.find_all('a', href=True, class_='title'):
             no_of_offers_vendor += 1
             all_titles.append(a.text.strip())
+            if "gram" in a.text.strip().lower():
+                #print(a.text.strip())
+                if "." in a.text.strip().lower().split('gram')[0]:
+                    quantity = (re.findall("\d+\.\d+", a.text.strip().lower().split('gram')[0]))[0]
+                else:
+                    quantity = (re.findall("\d+", a.text.strip().lower().split('gram')[0]))[0]
+            else:
+                print("No quantity found in: " + a.text.strip())
+                quantity = 0
+
+            all_quantities.append(quantity)
 
         for price in soup.find_all('span', class_='Price'):
-            all_prices.append(price.text.strip())
+            all_prices.append(re.findall("\d+\.\d+", price.text.strip())[0])
 
     print("This vendor has: " + str(no_of_offers_vendor) + " offers")
 
 
-results = (list(zip(all_titles, all_prices)))
-for i in results[0:10]:
-    print(i)
+results = (list(zip(all_titles, all_quantities, all_prices)))
+for i in results[0:50]:
+    if "cocaine" in i[0].lower():
+        if i[1] != 0:
+            # print(i[0], i[1], i[2])
+            # print(i[0])
+            cost_per_gram = (float(i[2])/float(i[1]))
+            print("With the offer of: " + i[0] + " you pay: " + str(cost_per_gram) + " dollars per gram!")
 print(len(results))
