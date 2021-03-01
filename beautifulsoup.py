@@ -14,65 +14,62 @@ socket.getaddrinfo = getaddrinfo
 
 url = "http://yxuy5oau7nugw4kpb4lclrqdbixp3wvc4iuiad23ebyp2q3gx7rtrgqd.onion/home"
 
+# Manually selected from the browser header after solving the captcha
 cookies={'ray_id':'21769fe0177c0cc6b8e6869d370b22f7967f7257c2683dd8f203c322fdcc8f8d',
          'hr4ujvby8ds459og4kzcpbzwjdj_session':'eyJpdiI6IjM3S1hcL1B4RTJ0S1wvbzNFbGJ3ZjBXZz09IiwidmFsdWUiOiJ5NmZieFRyQjlVME9STUhYWUZRNEo3UXc1N1dwdlJjK2RQY01LWEJOSlZjWDlCcFlKZUo3aURTQVhSVzJhN2dEbjU3bHY3SEo0c2pYYTJ6ekoxWkp3Uzk4Zm51SHE0a3RmUktPYlwveUFZXC9BWVwvNDdcL204cERrZGJWdGhHOHV6bkMiLCJtYWMiOiIzNDdhNWM2MDg2MmViYjI2MTQ2MDdkNTBmNDRhMTEzZTFlMjc0MWZhOTA3ZTJmNTc3OWZhMjdjNDg4ZGRhNzMxIn0%3D',
          'XSRF-TOKEN':'eyJpdiI6IkRFT3BoT2NBbVl5RU5tY3RuZDVuc3c9PSIsInZhbHVlIjoid0tqWnZwckFzbWgwMjlDN0xJakZpd1ZwS3hxK1I2a2hBcm5NNkZicmsxeVdxdG9wdDVHYVJEUHhyNTdnZWtnTlcxNHJ6ZnpFXC9Ha3ZqR3A4RGQwemRCcVRSVEpFa2JIek5aM3dQTzRXS3hGMlZFMEhTWWpkZGg0NFwvUEJhdHUzVyIsIm1hYyI6ImEyYmNiODY4OTBkMzEzYjRjYTkxOTQzMGRkNDlkZDY3NGZkMTk2YmJhMmU0ZWIzOWNmZTVkOTI0Yjk5MTNkYzMifQ%3D%3D'}
-
 
 
 s = requests.Session()
 s.headers.update({
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/68.0'
 })
-#s.proxies['http'] - 'socks5h://localhost:9050'
-#s.proxies['https'] - 'socks5h://localhost:9050'
 
 proxies = {
     'http': 'socks5h://localhost:9050',
     'https': 'socks5h://localhost:9050'
 }
-
+# Get the homepage
 web_page = s.get(url, cookies=cookies, proxies=proxies)
-
-#print(web_page)
-
 soup = BeautifulSoup(web_page.content, 'html.parser')
-#print(soup.prettify())
 
 
 user_profiles = []
-
 for a in soup.find_all('a', href=True):
     if 'profile' in a['href']:
         user_profiles.append(a['href'])
 
 vendor_offers = []
-
-for profile in user_profiles[2:5]:
-    #time.sleep(1)
-    print(profile)
+all_titles = []
+all_prices = []
+for profile in user_profiles[2:6]:
+    time.sleep(1)
     web_page = s.get(profile, cookies=cookies, proxies=proxies)
     soup = BeautifulSoup(web_page.content, 'html.parser')
     for a in soup.find_all('a', href=True):
         if 'items' in a['href'] and 'vendor' in a['href']:
             vendor_offers.append(a['href'])
 
-all_titles = []
-all_prices = []
+    print("Vendor profile: " + profile)
+    print("Feedback received: " + soup.find(text="Total Feedback Received").findNext('td').contents[0])
+    print("Positive feedback ratio: " + soup.find(text="Positive Feedback Received Ratio").findNext('td').contents[0])
 
-for drug_offer in vendor_offers:
-    print(drug_offer)
-    #time.sleep(3)
-    web_page = s.get(drug_offer, cookies=cookies, proxies=proxies)
-    soup = BeautifulSoup(web_page.content, 'html.parser')
-    for a in soup.find_all('a', href=True, class_='title'):
-        all_titles.append(a.text.strip())
+    for drug_offer in vendor_offers[0:3]:
+        time.sleep(2)
+        no_of_offers_vendor = 0
+        web_page = s.get(drug_offer, cookies=cookies, proxies=proxies)
+        soup = BeautifulSoup(web_page.content, 'html.parser')
+        for a in soup.find_all('a', href=True, class_='title'):
+            no_of_offers_vendor += 1
+            all_titles.append(a.text.strip())
 
-    for price in soup.find_all('span', class_='Price'):
-        all_prices.append(price.text.strip())
+        for price in soup.find_all('span', class_='Price'):
+            all_prices.append(price.text.strip())
+
+    print("This vendor has: " + str(no_of_offers_vendor) + " offers")
 
 
 results = (list(zip(all_titles, all_prices)))
-
-for i in results:
+for i in results[0:10]:
     print(i)
+print(len(results))
