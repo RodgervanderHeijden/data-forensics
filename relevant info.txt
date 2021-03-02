@@ -1,5 +1,6 @@
 Useful analyses to recreate:
 https://www.kaggle.com/nicapotato/dark-net-light-in-the-dark
+https://medium.com/@jonathan.benalii/dark-web-monitoring-part-1-d75fb43f2238 - some example analyses plus captcha strategy (maybe in future)
 
 ------
 
