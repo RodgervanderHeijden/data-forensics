@@ -14,11 +14,11 @@ st.title('Shining a light on the dark web')
 # LOAD THE DATA
 @st.cache(allow_output_mutation=True)
 def get_all_data():
-    drugs = pd.read_csv(r'C:\Users\Thai\PycharmProjects\DataForensics\Product_dataset_new.csv')
+    drugs = pd.read_csv(r'.\Product_dataset_new.csv')
     drugs.drop(drugs.columns[0], axis=1, inplace=True)
     # to do: add country of origin to the vendor dataset. Can be extracted from drugs dataset.
     # vendor can have multiple shiipping from locations --> unable to trace exact country of origin
-    vendors = pd.read_csv(r'C:\Users\Thai\PycharmProjects\DataForensics\Vendor_dataset_new.csv')
+    vendors = pd.read_csv(r'.\Vendor_dataset_new.csv')
     vendors.drop(vendors.columns[0], axis=1, inplace=True)
     return drugs, vendors
 
