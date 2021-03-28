@@ -52,7 +52,7 @@ with st.sidebar:
     # shipping_from_countries = list(df_drugs.shipping_from.unique())
     # shipping_from_countries_copy = ['All countries'] + shipping_from_countries
 
-    if chapter == "1. Data and data preprocessing" or chapter == "5. Create your own reports":
+    if chapter == "1. Data and data preprocessing":
         st.subheader("Additional options")
         country_multiselect()
 
@@ -67,7 +67,7 @@ with st.sidebar:
         # st_country_select = shipping_from_countries
         st_slider_offer_min = st.slider("What should be the minimum amount of offers?", 10, 500, value=50, step=10)
 
-    elif chapter == "3. Vendor graphs" or chapter == "4. Insights":
+    elif chapter == "3. Vendor graphs" or chapter == "4. Insights" or chapter == "5. Create your own reports":
         pass
 
     else:
@@ -423,30 +423,30 @@ if chapter == "4. Insights":
     st.plotly_chart(fig, use_container_width=True)
 
 
-    col_1, col_2 = st.beta_columns(2)
-    with col_1, col_2:
-        # boxplot rank vs price
-        df_drugs = df_drugs.merge(df_vendors[['vendor', 'rank', 'verification']], on='vendor', how='left')
-        fig14 = px.box(df_drugs, x='rank', y="price in $")
-        col_1.plotly_chart(fig14)
+    #col_1, col_2 = st.beta_columns(2)
+    #with col_1, col_2:
+    #    # boxplot rank vs price
+    #    df_drugs = df_drugs.merge(df_vendors[['vendor', 'rank', 'verification']], on='vendor', how='left')
+    #    fig14 = px.box(df_drugs, x='rank', y="price in $")
+    #    col_1.plotly_chart(fig14)
 
-        # boxplot verification vs price
-        df_drugs.verification = df_drugs.verification.str.replace('Verification', "")
-        fig15 = px.box(df_drugs, x='verification', y="price in $")
-        col_2.plotly_chart(fig15)
+    #    # boxplot verification vs price
+    #    df_drugs.verification = df_drugs.verification.str.replace('Verification', "")
+    #    fig15 = px.box(df_drugs, x='verification', y="price in $")
+    #    col_2.plotly_chart(fig15)
 
-        # distribution of categories level 2 for the vendors
-        unique_cat_level_2 = pd.DataFrame(df_drugs.groupby('vendor').category_level_2.nunique()).reset_index()
-        fig16 = px.histogram(unique_cat_level_2,
-            x="category_level_2", title='Distribution of number of categories (level 2)', nbins=50)
-        col_1.plotly_chart(fig16)
+    #    # distribution of categories level 2 for the vendors
+    #    unique_cat_level_2 = pd.DataFrame(df_drugs.groupby('vendor').category_level_2.nunique()).reset_index()
+    #    fig16 = px.histogram(unique_cat_level_2,
+    #        x="category_level_2", title='Distribution of number of categories (level 2)', nbins=50)
+    #    col_1.plotly_chart(fig16)
 
-        unique_cat_level_highest = pd.DataFrame(df_drugs.groupby('vendor').highest_category.nunique()).reset_index()
-        fig17 = px.histogram(unique_cat_level_highest,
-                             x="highest_category", title='Distribution of number of categories (highest_category)', nbins=50)
-        col_2.plotly_chart(fig17)
+    #    unique_cat_level_highest = pd.DataFrame(df_drugs.groupby('vendor').highest_category.nunique()).reset_index()
+    #    fig17 = px.histogram(unique_cat_level_highest,
+    #                         x="highest_category", title='Distribution of number of categories (highest_category)', nbins=50)
+    #    col_2.plotly_chart(fig17)
 
-        pass
+    #    pass
 
 if chapter == "5. Create your own reports":
     df_drugs, df_vendors = return_specified_data(st_country_select)
