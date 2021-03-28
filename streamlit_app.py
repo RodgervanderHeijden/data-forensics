@@ -52,7 +52,7 @@ with st.sidebar:
     # shipping_from_countries = list(df_drugs.shipping_from.unique())
     # shipping_from_countries_copy = ['All countries'] + shipping_from_countries
 
-    if chapter == "1. Data and data preprocessing":
+    if chapter == "1. Data and data preprocessing" or chapter == "5. Create your own reports":
         st.subheader("Additional options")
         country_multiselect()
 
@@ -67,7 +67,7 @@ with st.sidebar:
         # st_country_select = shipping_from_countries
         st_slider_offer_min = st.slider("What should be the minimum amount of offers?", 10, 500, value=50, step=10)
 
-    elif chapter == "3. Vendor graphs" or chapter == "4. Insights" or chapter == "5. Create your own reports":
+    elif chapter == "3. Vendor graphs" or chapter == "4. Insights" or chapter == "0. Preface":
         pass
 
     else:
