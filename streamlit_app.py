@@ -242,7 +242,7 @@ if chapter == "2. Drug offer graphs":
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
         fig_category_prices = px.strip(df_drugs, x="price in $", y="highest_category", color="highest_category")
-        df_drugs['price in $'] = df_drugs['price in $'].str.replace(",","").astype(float)
+        df_drugs['price in $'] = df_drugs['price in $'].astype(str).str.replace(",","").astype(float)
         fig_category_avg_prices = px.strip(df_drugs.groupby('highest_category').mean().reset_index().sort_values(
             by='price in $', ascending=False),
             x="price in $", y="highest_category", color="highest_category")
