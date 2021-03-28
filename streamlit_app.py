@@ -407,9 +407,9 @@ if chapter == "4. Insights":
     # st.header("Graphs")
     st.subheader("Some hypotheses to be investigated")
     st.write(" * Do vendors select one specialty within drugs or sell a wide range?\n "
-             " * Does the country of origin factor in the prices?\n"
+             " * Does the country of origin have an effect on prices?\n"
              " * Is trust a factor in prices?\n"
-             " * Do trusted vendors have more transactions per month?\n"
+             " * Do trusted vendors have more transactions?\n"
              " * Is worldwide shipping a predictor for number of deals?\n"
              " * Do higher ranked vendors sell special kind of drugs?\n"
              " * Do higher ranked vendors have higher prices?")
