@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 import pycountry
-
+import altair as alt
 
 # INITIAL SETUP
 st.set_page_config(page_title=None, page_icon=None, layout='wide', initial_sidebar_state='expanded')
@@ -46,7 +46,8 @@ with st.sidebar:
                                         "2. Drug offer graphs",
                                         "3. Vendor graphs",
                                         "4. Insights",
-                                        "5. Create your own reports"))
+                                        "5. Create your own reports",
+                                        "6. Testing hypotheses"))
 
     # create options
     # shipping_from_countries = list(df_drugs.shipping_from.unique())
@@ -474,3 +475,157 @@ if chapter == "5. Create your own reports":
     st_slider_vendor = st.slider("Number of observations to display.", 0, len(df_vendors), 3)
     st.dataframe(df_vendors[st_ms_vendor].tail(st_slider_vendor))
 
+
+elif chapter == '6. Testing hypotheses':
+    st.header("Hypotheses")
+    st.subheader("Some hypotheses to be investigated")
+    df_drugs, df_vendors = get_all_data()
+    st.write(" * Do vendors select one specialty within drugs or sell a wide range?\n "
+             " * Do higher ranked vendors sell special kind of drugs?\n"
+             " * Do trusted vendors have more transactions?\n"
+             " * Is worldwide shipping a predictor for number of deals?\n"
+             " * Is trust a factor in prices?\n"
+             " * Does the country of origin have an effect on prices?\n"
+             " * Do higher ranked vendors have higher prices?")
+
+    st.write("___")
+    st.subheader("Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
+    st.write("We wondered whether the vendors on the dark web are well-versed in the entire criminal circuit or might just "
+             "have a connection with one kind of drugs and are experts in that. Additionally, it would be possible that "
+             "several drugs are often sold in conjunction. For instance, cocaine and psychedelics have vastly different "
+             "effects, and one could imagine that expertise in one category would not necessarily translate into knowledge "
+             "of the other. We set out to investigate that. ")
+
+    st.write("Torrez works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
+             "can decide not to further specify their offers. Our dataset is specifically selected within the first level, "
+             "'Drugs & Chemicals'. The chart beneath showcases the spread of the second level category. "
+             " We have selected the 50 vendors with the most active offers at the time of the scraping,"
+             " as that would give us the most insight. The results in a cut-off of 63 offers.")
+
+    st.write("")
+
+    # Quite a chained operation, so explanation:
+    # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
+    # Show the top 10 highest # of offers and take the index (the account names) to convert that to a list for further selection
+    top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.to_list()
+    top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
+    top_vendors_offers.fillna("Not provided", inplace=True)
+
+    # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
+    df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_2']).count().reset_index()[['vendor', 'category_level_2', 'product']]
+    df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
+    df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
+
+
+    vendor_top = alt.Chart(df_rest_2).mark_circle().encode(
+        alt.Y('category_level_2:O', sort=['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
+                                        'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
+                                        'Accessories', 'Not provided'], title='Categories'),
+        alt.X('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Size('product:Q', legend=None),
+        alt.Color('product:Q', legend=None),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category'),
+                   alt.Tooltip('product', title='Number of offers')
+                   ]
+    ).interactive()
+
+    vendor_top_missing = alt.Chart(
+        df_not_provided_2
+    ).mark_circle(
+        color='gray'
+    ).encode(
+        alt.Y('category_level_2:N',
+              sort=['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants', 'Psychedelics', 'Benzos',
+                    'Prescriptions Drugs', 'Steroids', 'Weight Loss', 'Accessories', 'Not provided']),
+        alt.X('vendor',
+              sort=top_vendors),
+        alt.Size('product:Q', legend=None),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category'),
+                   alt.Tooltip('product', title='Number of offers')
+                   ]
+    ).interactive()
+
+    st.altair_chart(
+        (vendor_top + vendor_top_missing).configure_axis(
+            labelFontSize=12,
+            titleFontSize=20,
+            labelAngle=-30,
+        ).configure_title(
+            fontSize=32
+        ).properties(
+            height=500, title="What types of drugs are sold in conjunction?"
+        ), use_container_width=True
+    )
+
+
+    # What we can deduce: steroids are not sold by a lot of people, but these people mostly sell just steroids as well.
+
+    # ____________________________________________________
+#____________________________________________________
+#____________________________________________________
+#____________________________________________________
+#____________________________________________________
+    # Quite a chained operation, so explanation:
+    # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
+    # Show the top 10 highest # of offers and take the index (the account names) to convert that to a list for further selection
+    top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.to_list()
+    top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
+    top_vendors_offers.fillna("Not provided", inplace=True)
+
+    # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
+    df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_3', 'category_level_2']).count().reset_index()[['vendor', 'category_level_2', 'category_level_3', 'product']]
+    df_not_provided = df_plot_data[df_plot_data['category_level_3'] == 'Not provided']
+    df_rest = df_plot_data[~df_plot_data.isin(df_not_provided)].dropna(axis=0)
+
+    lvl3_ordering = []
+    for lvl2_cat in df_rest['category_level_2'].unique():
+        cat_df = df_rest[df_rest['category_level_2'] == lvl2_cat]
+        for lvl3_cat in cat_df['category_level_3'].unique():
+            lvl3_ordering.append(lvl3_cat)
+
+    vendors_top = alt.Chart(df_rest).mark_circle().encode(
+        alt.Y('category_level_3:O', title='Categories', sort=lvl3_ordering),
+        alt.X('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Size('product:Q', legend=None),
+        alt.Color('category_level_3:N', legend=None, sort=lvl3_ordering,
+                   scale=alt.Scale(scheme='category20b'),
+                  ),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 1'),
+                   alt.Tooltip('category_level_3', title='Category lvl 2'),
+                   alt.Tooltip('product', title='Number of offers'),
+                   ]
+    ).interactive()
+
+    vendor_top_missing = alt.Chart(
+        df_not_provided
+    ).mark_circle(
+        color='gray'
+    ).encode(
+        alt.Y('category_level_3:N', sort=lvl3_ordering
+             ),
+        alt.X('vendor',
+              sort=top_vendors),
+        alt.Size('product:Q', legend=None),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 1'),
+                   alt.Tooltip('category_level_3', title='Category lvl 2'),
+                   alt.Tooltip('product', title='Number of offers'),
+                   ]
+    ).interactive()
+
+    st.altair_chart(
+        (vendors_top + vendor_top_missing).configure_axis(
+            labelFontSize=12,
+            titleFontSize=20,
+            labelAngle=-30,
+        ).configure_axisY(
+            labelAngle=-15,
+        ).configure_title(
+            fontSize=32
+        ).properties(
+            height=700, title="What types of drugs are sold in conjunction?"
+        ), use_container_width=True
+    )
