@@ -489,7 +489,7 @@ elif chapter == '6. Testing hypotheses':
              " * Do higher ranked vendors have higher prices?")
 
     st.write("___")
-    st.subheader("Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
+    st.header("Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
     st.write("We wondered whether the vendors on the dark web are well-versed in the entire criminal circuit or might just "
              "have a connection with one kind of drugs and are experts in that. Additionally, it would be possible that "
              "several drugs are often sold in conjunction. For instance, cocaine and psychedelics have vastly different "
@@ -498,11 +498,17 @@ elif chapter == '6. Testing hypotheses':
 
     st.write("Torrez works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
              "can decide not to further specify their offers. Our dataset is specifically selected within the first level, "
-             "'Drugs & Chemicals'. The chart beneath showcases the spread of the second level category. "
-             " We have selected the 50 vendors with the most active offers at the time of the scraping,"
-             " as that would give us the most insight. The results in a cut-off of 63 offers.")
+             "'Drugs & Chemicals'. The chart beneath showcases the spread of the second level categories. "
+             " We have selected the 50 vendors with the highest amount of active offers at the time of the scraping,"
+             " as that would give us the most insight. The results in a cut-off of 63 offers. The categories are sorted "
+             "on the quantity of the offers (descending), similarly, the vendors are sorted as well (descending). "
+             "The size of the dots refers to the amount of offers for that specific category and vendor combination; "
+             "specific numbers are visible in the tooltip when hovering. The color is based on the same metric, with "
+             "more blue matching to more offers. As not all offers had a specified category assigned, we assigned those "
+             "offers an 'Not provided' label, plotted them on the bottom and colored them gray.")
 
-    st.write("")
+    st.write("The resulting figure, as shown below, is very information dense. We will cover some interesting insights, "
+             "but have left some others to be discovered by the reader. ")
 
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
@@ -516,28 +522,28 @@ elif chapter == '6. Testing hypotheses':
     df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
     df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
 
+    level_2_order = ['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
+                                        'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
+                                        'Accessories', 'Not provided']
 
     vendor_top = alt.Chart(df_rest_2).mark_circle().encode(
-        alt.Y('category_level_2:O', sort=['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
-                                        'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
-                                        'Accessories', 'Not provided'], title='Categories'),
+        alt.Y('category_level_2:O', sort=level_2_order, title='Categories'),
         alt.X('vendor:N', sort=top_vendors, title='Vendors'),
         alt.Size('product:Q', legend=None),
-        alt.Color('product:Q', legend=None),
+        alt.Color('product:Q', legend=None), # sort='descending'),
+        opacity=alt.value(1),
         tooltip = [alt.Tooltip('vendor', title='Vendor'),
                    alt.Tooltip('category_level_2', title='Category'),
                    alt.Tooltip('product', title='Number of offers')
                    ]
-    ).interactive()
+    )
 
     vendor_top_missing = alt.Chart(
         df_not_provided_2
     ).mark_circle(
         color='gray'
     ).encode(
-        alt.Y('category_level_2:N',
-              sort=['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants', 'Psychedelics', 'Benzos',
-                    'Prescriptions Drugs', 'Steroids', 'Weight Loss', 'Accessories', 'Not provided']),
+        alt.Y('category_level_2:N', sort=level_2_order),
         alt.X('vendor',
               sort=top_vendors),
         alt.Size('product:Q', legend=None),
@@ -545,7 +551,7 @@ elif chapter == '6. Testing hypotheses':
                    alt.Tooltip('category_level_2', title='Category'),
                    alt.Tooltip('product', title='Number of offers')
                    ]
-    ).interactive()
+    )
 
     st.altair_chart(
         (vendor_top + vendor_top_missing).configure_axis(
@@ -555,21 +561,61 @@ elif chapter == '6. Testing hypotheses':
         ).configure_title(
             fontSize=32
         ).properties(
-            height=500, title="What types of drugs are sold in conjunction?"
+            height=500, title="What categories of drugs are sold in conjunction?"
         ), use_container_width=True
     )
 
+    st.markdown("""
+        ### 1. _Cannabis & Hash_ is the most popular category on the marketplace. 
 
-    # What we can deduce: steroids are not sold by a lot of people, but these people mostly sell just steroids as well.
+        Ten out of the top 50 vendors have over 50 offers just on these drugs, with 3 out of the top 4 vendors selling
+        either exclusively or almost exclusively these drugs. 
 
-    # ____________________________________________________
-#____________________________________________________
-#____________________________________________________
-#____________________________________________________
-#____________________________________________________
+        ### 2. There are two kinds of _cannabis & hash_ vendors.
+
+        Vendors like California420service, PitStopUK or kandykones only offer weed (100% of offers), 
+        while RoyalMailer (84%), StrainPirate (98%) and topmoneymaker (92%) clearly prioritize the category. Vendors 
+        for whom _cannabis & hash_ aren't the main priority generally sell in a lot of other categories, but almost 
+        all of them sell _Stimulants_ and _Psychedelics_.
+        
+        ### 3. _Prescription drugs_ vendors and _Steroids_ vendors specialize in these drugs.
+        
+        Similar to the main _cannabis & hash_ vendors, vendors of _prescription drugs_ and vendors of _steroids_ 
+        barely sell anything else. Vendors as akgeneric, SteroidWarehouse, thebodyshop, bestgroup and PSteroids almost 
+        exclusively sell drugs from within these two categories. Curiously, none of the vendors sell _cannabis & hash_, 
+        despite that being the most popular drug.
+        
+        ### 4. Three distinct types of vendors can be identified.   
+
+        Based on the available offers per vendor, we can identify three blocks of vendors. 
+        #### &ensp;&ensp;&ensp;&ensp; 1. _Cannabis & Hash_
+        #### &ensp;&ensp;&ensp;&ensp; 2. _Dissociatives, Ecstacy, Opiates, Stimulants, Psychedelics_
+        #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_
+        
+        After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated 
+        into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the
+        second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
+        have specialized vendors that do not or barely sell anything else. 
+        
+        """)
+
+    st.write("___")
+
+    st.write("Because our marketplace allowed vendors to also select a subcategory, we will delve into that as well. "
+             "Similar to the figure above, this figure is very information dense (even more so!), yet some (expanded) "
+             "insights will be described. Changes to the layout were kept to a minimum, with the axes and the order "
+             "staying the same. The size of the dots, again, represents the amount of offers. As each category represents "
+             "multiple subcategories, we changed the color coding to match a block of the main category. Thus, the first "
+             "color (blue) refers to the main category _Cannabis & Hash_, and this category starts at _Buds & Flowers_ "
+             "and extends to _Vaping_. Subcategories were sorted alphebetically, while the main categories retain their "
+             "order of the graph above. Notably, one exception is in place: _benzos_ (red). Torrez uses the subcategory "
+             "_pills_ for _Ecstacy_ as well, and thus these are plotted together. The color coding is correct, for a "
+             "more convenient interpretation the other _benzos_ category is plotted next to the _pills_. ")
+
+
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
-    # Show the top 10 highest # of offers and take the index (the account names) to convert that to a list for further selection
+    # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
     top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.to_list()
     top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
     top_vendors_offers.fillna("Not provided", inplace=True)
@@ -579,32 +625,37 @@ elif chapter == '6. Testing hypotheses':
     df_not_provided = df_plot_data[df_plot_data['category_level_3'] == 'Not provided']
     df_rest = df_plot_data[~df_plot_data.isin(df_not_provided)].dropna(axis=0)
 
-    lvl3_ordering = []
-    for lvl2_cat in df_rest['category_level_2'].unique():
-        cat_df = df_rest[df_rest['category_level_2'] == lvl2_cat]
-        for lvl3_cat in cat_df['category_level_3'].unique():
-            lvl3_ordering.append(lvl3_cat)
+    level_3_order = [
+        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
+        'GBL', 'Ketamine', # Dissociatives
+        'MDMA', 'Pills', # Ecstacy
+        'Powder', # Benzos
+        'Codeine', 'Heroin', 'Oxycodone', 'RC', # Opiates
+        '4-FA', 'Adderal', 'Crack', 'Cocaine', 'Meth', 'Speed', 'TMA', # Stimulants
+        '2C-B', '5-MeO-DMT', 'DMT', 'LSD', 'Mescaline', 'Mushrooms', # Psychedelics
+        'Not provided']
 
     vendors_top = alt.Chart(df_rest).mark_circle().encode(
-        alt.Y('category_level_3:O', title='Categories', sort=lvl3_ordering),
+        alt.Y('category_level_3:O', title='Categories', sort=level_3_order),
         alt.X('vendor:N', sort=top_vendors, title='Vendors'),
         alt.Size('product:Q', legend=None),
-        alt.Color('category_level_3:N', legend=None, sort=lvl3_ordering,
-                   scale=alt.Scale(scheme='category20b'),
+        alt.Color('category_level_2:N', legend=None, sort=level_2_order,
+                   scale=alt.Scale(scheme='category20'),
                   ),
+        opacity=alt.value(1),
         tooltip = [alt.Tooltip('vendor', title='Vendor'),
-                   alt.Tooltip('category_level_2', title='Category lvl 1'),
-                   alt.Tooltip('category_level_3', title='Category lvl 2'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
                    alt.Tooltip('product', title='Number of offers'),
                    ]
-    ).interactive()
+    )
 
     vendor_top_missing = alt.Chart(
         df_not_provided
     ).mark_circle(
         color='gray'
     ).encode(
-        alt.Y('category_level_3:N', sort=lvl3_ordering
+        alt.Y('category_level_3:N', sort=level_3_order
              ),
         alt.X('vendor',
               sort=top_vendors),
@@ -614,7 +665,7 @@ elif chapter == '6. Testing hypotheses':
                    alt.Tooltip('category_level_3', title='Category lvl 2'),
                    alt.Tooltip('product', title='Number of offers'),
                    ]
-    ).interactive()
+    )
 
     st.altair_chart(
         (vendors_top + vendor_top_missing).configure_axis(
@@ -626,6 +677,67 @@ elif chapter == '6. Testing hypotheses':
         ).configure_title(
             fontSize=32
         ).properties(
-            height=700, title="What types of drugs are sold in conjunction?"
+            height=700, title="What subcategories of drugs are sold in conjunction?"
         ), use_container_width=True
     )
+
+    st.markdown("""
+        ### 1. _Buds & Flowers_ explains popularity _Cannabis & Hash_
+        
+        With the noted presence of _Cannabis & Hash_, we see that _Buds & Flowers_ are mainly responsible for this 
+        effect. Most subcategories however are barely sold, not in quantity in offers nor in quantity of vendors. A 
+        possible explanation would be that there are a lot of strains for cannabis, and logically the type of flower
+        matters to prospective buyers. For other types of drugs, say cocaine, only purity matters, and individual 
+        vendors do not have dozens of types of cocaine. 
+        
+        ### 2. _Ketamine_, _MDMA_ and _Cocaine_ are popular
+        
+        On the other hand, _Ketamine_, _MDMA_ and _Cocaine_ are sold by a lot of different vendors (and often the same 
+        vendors), but a single vendor has at most 28 offers of one category. We can hypothesize about the underlying 
+        reasons, partly already explained in the previous finding, but it's peculiar nonetheless. 
+    """)
+
+
+    st.markdown("""
+        ### 3. Several subcategories are only sold by one or a few vendors
+        
+        For instance, the subcategories as _Seeds_, _Synthetic_, _GBL_, _Powder_, _Codeine_, _4-FA_, _TMA_, _DMT_ and 
+        _Mescaline_ are only offered by at most two vendors out of the top 50. In a similar vain, vendors that offer 
+        drugs in the _Cannabis & Hash_ (blue), _Ecstacy_ (orange) or _Stimulants_ (green) categories generally offer 
+        multiple subcategories if not all. On the flipside, vendors that sell drugs within the _Benzos_ (red) or 
+        _Opiates_ (beige) categories only sell one specific subcategory. Due to our limited expertise we cannot 
+        formulate a hypothesis that could potentially explain this.
+        
+        ### 4. _Prescription drugs_, _Steroids_ and _Weight Loss_ drugs do not have subcategories
+ 
+        With a total of 1158 offers within these categories, one could propose that further specification is in place. 
+        Torrez however does not allow any subcategories within these categories. Scrolling through the offers here show
+        a wide variety of drugs in each one, though we're unaware whether a proper (categorical) distinction could 
+        possibly be created. 
+        
+        Furthermore, the accessories category does not have subcategories as well. However, with only 10 offers this 
+        would not benefit anyone. Additionally, several listings should not have been placed in the _Drugs & Chemicals_
+        main category of Torrez at all, such as a "Facebook hack", tasers or a Netflix gift card.          
+    """)
+
+    st.write(df_drugs[df_drugs['category_level_2'].isin(['Weight Loss', 'Prescriptions Drugs', 'Steroids'])].reset_index(drop=True))
+    st.write(df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True))
+
+    st.markdown("""
+        ### 4. Three distinct types of vendors can be identified.
+
+        Based on the available offers per vendor, we can identify three blocks of vendors. 
+        #### &ensp;&ensp;&ensp;&ensp; 1. _Cannabis & Hash_
+        #### &ensp;&ensp;&ensp;&ensp; 2. _Dissociatives, Ecstacy, Opiates, Stimulants, Psychedelics_
+        #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_
+
+        After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated 
+        into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the
+        second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
+        have specialized vendors that do not or barely sell anything else.
+    """)
+
+# Highlight some notable users, pivot the same table. Size = average price (say vendor, category, category 3 as index, indiv offers as data). 
+# Helps answer whether specialists are more expensive or not, or diversification:
+        
+        # Also add tool that allows for individual users to be plotted 
