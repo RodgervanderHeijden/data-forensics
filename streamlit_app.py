@@ -661,8 +661,8 @@ elif chapter == '6. Testing hypotheses':
               sort=top_vendors),
         alt.Size('product:Q', legend=None),
         tooltip = [alt.Tooltip('vendor', title='Vendor'),
-                   alt.Tooltip('category_level_2', title='Category lvl 1'),
-                   alt.Tooltip('category_level_3', title='Category lvl 2'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
                    alt.Tooltip('product', title='Number of offers'),
                    ]
     )
@@ -741,3 +741,152 @@ elif chapter == '6. Testing hypotheses':
 # Helps answer whether specialists are more expensive or not, or diversification:
         
         # Also add tool that allows for individual users to be plotted 
+
+
+    # Quite a chained operation, so explanation:
+    # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
+    # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
+    top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.to_list()
+    top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
+    top_vendors_offers.fillna("Not provided", inplace=True)
+
+    # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
+    list_of_dollars = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in top_vendors_offers['price in $']]
+
+
+    top_vendors_offers['conv_price'] = list_of_dollars
+
+    plot_df = top_vendors_offers.groupby(['vendor', 'category_level_2', 'category_level_3', 'shipping_from']).agg(['mean', 'count'])
+    plot_df.columns = ['Mean product price', 'Count']
+    plot_df['Mean product price'].astype(int)
+    st.write(plot_df.reset_index(inplace=True))
+
+    #df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_3', 'category_level_2']).count().reset_index()[['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $']]
+    df_not_provided = plot_df[plot_df['shipping_from'] == 'Not provided']
+    df_rest = plot_df[~plot_df.isin(df_not_provided)].dropna(axis=0)
+    st.write(df_rest)
+    st.write(df_not_provided)
+    st.write(df_drugs)
+
+    for seller in df_rest['vendor']:
+        country_of_origin = df_vendors[df_vendors['vendor'] == seller]
+
+    level_3_order = [
+        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
+        'GBL', 'Ketamine', # Dissociatives
+        'MDMA', 'Pills', # Ecstacy
+        'Powder', # Benzos
+        'Codeine', 'Heroin', 'Oxycodone', 'RC', # Opiates
+        '4-FA', 'Adderal', 'Crack', 'Cocaine', 'Meth', 'Speed', 'TMA', # Stimulants
+        '2C-B', '5-MeO-DMT', 'DMT', 'LSD', 'Mescaline', 'Mushrooms', # Psychedelics
+        'Not provided']
+
+    vendors_top = alt.Chart(df_rest).mark_circle().encode(
+        alt.X('category_level_2:O', title='Categories', sort=level_2_order),
+        alt.Y('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Size('Count:Q', legend=None),
+        alt.Color('shipping_from',
+                   scale=alt.Scale(scheme='category20'),
+                  ),
+        opacity=alt.value(1),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
+                   alt.Tooltip('Count', title='Number of offers'),
+                   alt.Tooltip('Mean product price', title='Average price of listing'),
+                   alt.Tooltip('shipping_from', title='Country of origin')
+                   ]
+    )
+
+    vendor_top_missing = alt.Chart(
+        df_not_provided
+    ).mark_circle(
+        color='gray'
+    ).encode(
+        alt.X('category_level_2:N', sort=level_2_order
+             ),
+        alt.Y('vendor',
+              sort=top_vendors),
+        alt.Size('Count:Q', legend=None),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
+                   alt.Tooltip('Count', title='Number of offers'),
+                   alt.Tooltip('Mean product price', title='Average price of listing'),
+                   alt.Tooltip('shipping_from', title='Country of origin')
+                   ]
+    )
+
+    st.altair_chart(
+        (vendors_top + vendor_top_missing).configure_axis(
+            labelFontSize=12,
+            titleFontSize=20,
+            labelAngle=-30,
+        ).configure_axisY(
+            labelAngle=0,
+        ).configure_title(
+            fontSize=32
+        ).properties(
+            height=1000, width=700, title="What subcategories of drugs are sold in conjunction?"
+        ),
+    )
+
+
+    # EXTENTION:
+    # Order such that continents are together
+
+    # Above: size = counts, color is country of origin. Order them together
+
+    # Below: size = mean price
+
+
+    vendors_top = alt.Chart(df_rest).mark_circle().encode(
+        alt.X('category_level_2:O', title='Categories', sort=level_2_order),
+        alt.Y('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Size('Mean product price:Q', legend=None),
+        alt.Color('shipping_from',
+                   scale=alt.Scale(scheme='category20'),
+                  ),
+        opacity=alt.value(1),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
+                   alt.Tooltip('Count', title='Number of offers'),
+                   alt.Tooltip('Mean product price', title='Average price of listing'),
+                   alt.Tooltip('shipping_from', title='Country of origin')
+                   ]
+    )
+
+    vendor_top_missing = alt.Chart(
+        df_not_provided
+    ).mark_circle(
+        color='gray'
+    ).encode(
+        alt.X('category_level_2:N', sort=level_2_order
+             ),
+        alt.Y('vendor',
+              sort=top_vendors),
+        alt.Size('Mean product price:Q', legend=None),
+        tooltip = [alt.Tooltip('vendor', title='Vendor'),
+                   alt.Tooltip('category_level_2', title='Category lvl 2'),
+                   alt.Tooltip('category_level_3', title='Category lvl 3'),
+                   alt.Tooltip('Count', title='Number of offers'),
+                   alt.Tooltip('Mean product price', title='Average price of listing'),
+                   alt.Tooltip('shipping_from', title='Country of origin')
+                   ]
+    )
+
+    st.altair_chart(
+        (vendors_top + vendor_top_missing).configure_axis(
+            labelFontSize=12,
+            titleFontSize=20,
+            labelAngle=-30,
+        ).configure_axisY(
+            labelAngle=0,
+        ).configure_title(
+            fontSize=32
+        ).properties(
+            height=1000, width=700, title="What subcategories of drugs are sold in conjunction?"
+        ),
+    )
+
