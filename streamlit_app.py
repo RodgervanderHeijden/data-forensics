@@ -16,6 +16,8 @@ st.title('Shining a light on the dark web')
 def get_all_data():
     drugs = pd.read_csv(r'Product_dataset_new.csv')
     drugs.drop(drugs.columns[0], axis=1, inplace=True)
+    # The price in $s is captured as a string, containing both decimal points and commas. Here we clean that to a float
+    drugs['price'] = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in drugs['price in $']]
     # to do: add country of origin to the vendor dataset. Can be extracted from drugs dataset.
     # vendor can have multiple shiipping from locations --> unable to trace exact country of origin
     vendors = pd.read_csv(r'Vendor_dataset_new.csv')
@@ -754,7 +756,7 @@ elif chapter == '6. Testing hypotheses':
     list_of_dollars = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in top_vendors_offers['price in $']]
 
 
-    top_vendors_offers['conv_price'] = list_of_dollars
+    #top_vendors_offers['conv_price'] = list_of_dollars
 
     plot_df = top_vendors_offers.groupby(['vendor', 'category_level_2', 'category_level_3', 'shipping_from']).agg(['mean', 'count'])
     plot_df.columns = ['Mean product price', 'Count']
@@ -890,3 +892,126 @@ elif chapter == '6. Testing hypotheses':
         ),
     )
 
+    strip = alt.Chart(df_drugs).mark_tick().encode(
+        x= #alt.X('jitter:Q',
+
+            'shipping_from', # prices also works well
+        y='category_level_2',
+        color='shipping_from'
+    )
+
+    st.altair_chart(strip)
+
+
+
+    shipping_from_countries = list(df_drugs.shipping_from.unique())
+    shipping_from_countries_copy = ['All countries'] + shipping_from_countries
+    select_country = st.multiselect('Select what country/countries you want to see the data of.',
+                                       options=shipping_from_countries_copy, default=['Netherlands', 'Australia', 'United States'])
+    if 'All countries' in select_country:
+        select_country = shipping_from_countries
+
+    df_under_50 = df_drugs[df_drugs['price'] <= 10000]
+    df_country = df_under_50[df_under_50['shipping_from'].isin(select_country)] # 1000/len(select_country)
+
+
+    stripplot_by_category =  alt.Chart(df_country, width=120).mark_point().encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=True, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('price:Q'), # cat lvl 2: N
+        color=alt.Color('shipping_from:N'),
+        tooltip=['price in $:N', 'product:N', 'category_level_2', 'category_level_3:N', 'shipping_from'],
+        size='price:Q',
+        column=alt.Column(
+            'category_level_2:N',
+            #title='shipping_from',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='center',
+                labelPadding=10,
+            ),
+        ),
+      ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(
+        spacing=0
+    ).configure_view(
+        stroke=None
+    )
+    st.altair_chart(stripplot_by_category, use_container_width=False)
+
+
+    stripplot_by_country = alt.Chart(df_country, width=1440/len(select_country)).mark_point().encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=True, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('price:Q'), # cat lvl 2: N
+        color=alt.Color('shipping_from:N'),
+        tooltip=['price in $:N', 'product:N', 'category_level_2',
+                 'category_level_3:N', 'shipping_from', 'shipping_to'],
+        size='price:Q',
+        column=alt.Column(
+            'shipping_from',
+            title='shipping_from',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='center',
+                labelPadding=10,
+            ),
+        ),
+      ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(
+        spacing=0
+    ).configure_view(
+        stroke=None
+    )
+    st.altair_chart(stripplot_by_country, use_container_width=False)
+
+
+
+    stripplot_by_receiving_country = alt.Chart(df_country, width=1440/len(df_country['shipping_to'].unique())).mark_point().encode(
+        x=alt.X(
+            'jitter:Q',
+            title=None,
+            axis=alt.Axis(values=[0], ticks=True, grid=True, labels=False),
+            scale=alt.Scale(),
+        ),
+        y=alt.Y('price:Q'), # cat lvl 2: N
+        color=alt.Color('shipping_from:N'),
+        tooltip=['price in $:N', 'product:N', 'category_level_2', 'category_level_3:N',
+                 'shipping_from', 'shipping_to'],
+        size='price:Q',
+        column=alt.Column(
+            'shipping_to',
+            title='shipping_to',
+            header=alt.Header(
+                labelAngle=-90,
+                titleOrient='top',
+                labelOrient='bottom',
+                labelAlign='center',
+                labelPadding=10,
+            ),
+        ),
+      ).transform_calculate(
+        # Generate Gaussian jitter with a Box-Muller transform
+        jitter='sqrt(-2*log(random()))*cos(2*PI*random())'
+    ).configure_facet(
+        spacing=0
+    ).configure_view(
+        stroke=None
+    )
+    st.altair_chart(stripplot_by_receiving_country, use_container_width=False)
