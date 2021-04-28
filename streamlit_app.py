@@ -675,7 +675,7 @@ elif chapter == '6. Testing hypotheses':
             titleFontSize=20,
             labelAngle=-30,
         ).configure_axisY(
-            labelAngle=-15,
+            labelAngle=0,
         ).configure_title(
             fontSize=32
         ).properties(
@@ -722,21 +722,11 @@ elif chapter == '6. Testing hypotheses':
         main category of Torrez at all, such as a "Facebook hack", tasers or a Netflix gift card.          
     """)
 
-    st.write(df_drugs[df_drugs['category_level_2'].isin(['Weight Loss', 'Prescriptions Drugs', 'Steroids'])].reset_index(drop=True))
-    st.write(df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True))
+    st.write(df_drugs[df_drugs['category_level_2'].isin(['Weight Loss', 'Prescriptions Drugs', 'Steroids'])].reset_index(drop=True).head(10))
+    st.write(df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True).head(10))
 
     st.markdown("""
-        ### 4. Three distinct types of vendors can be identified.
-
-        Based on the available offers per vendor, we can identify three blocks of vendors. 
-        #### &ensp;&ensp;&ensp;&ensp; 1. _Cannabis & Hash_
-        #### &ensp;&ensp;&ensp;&ensp; 2. _Dissociatives, Ecstacy, Opiates, Stimulants, Psychedelics_
-        #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_
-
-        After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated 
-        into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the
-        second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
-        have specialized vendors that do not or barely sell anything else.
+        As shown above, 
     """)
 
 # Highlight some notable users, pivot the same table. Size = average price (say vendor, category, category 3 as index, indiv offers as data). 
@@ -819,7 +809,9 @@ elif chapter == '6. Testing hypotheses':
                    ]
     )
 
-    st.altair_chart(
+
+    col2, col4 = st.beta_columns(2)
+    col2.altair_chart(
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
@@ -829,7 +821,7 @@ elif chapter == '6. Testing hypotheses':
         ).configure_title(
             fontSize=32
         ).properties(
-            height=1000, width=700, title="What subcategories of drugs are sold in conjunction?"
+            height=1000, width=700, title="Number of offers"
         ),
     )
 
@@ -878,17 +870,19 @@ elif chapter == '6. Testing hypotheses':
                    ]
     )
 
-    st.altair_chart(
+    col4.altair_chart(
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
             labelAngle=-30,
         ).configure_axisY(
             labelAngle=0,
+        ).configure_axisX(
+            labelFontSize=12,
         ).configure_title(
             fontSize=32
         ).properties(
-            height=1000, width=700, title="What subcategories of drugs are sold in conjunction?"
+            height=1000, width=700, title="Mean product price"
         ),
     )
 
@@ -897,7 +891,12 @@ elif chapter == '6. Testing hypotheses':
 
             'shipping_from', # prices also works well
         y='category_level_2',
-        color='shipping_from'
+        color='shipping_from',
+        tooltip=[alt.Tooltip('vendor', title='Vendor'),
+                 alt.Tooltip('category_level_2', title='Category lvl 2'),
+                 alt.Tooltip('category_level_3', title='Category lvl 3'),
+                 alt.Tooltip('shipping_from', title='Country of origin')
+                 ]
     )
 
     st.altair_chart(strip)
@@ -924,17 +923,24 @@ elif chapter == '6. Testing hypotheses':
         ),
         y=alt.Y('price:Q'), # cat lvl 2: N
         color=alt.Color('shipping_from:N'),
-        tooltip=['price in $:N', 'product:N', 'category_level_2', 'category_level_3:N', 'shipping_from'],
+        tooltip=[alt.Tooltip('price in $', title='Listed price'),
+                 alt.Tooltip('product', title='Number of offers'),
+                 alt.Tooltip('category_level_2', title='Category lvl 2'),
+                 alt.Tooltip('category_level_3', title='Category lvl 3'),
+                 alt.Tooltip('shipping_from', title='Ships from')
+                 ],
         size='price:Q',
         column=alt.Column(
             'category_level_2:N',
             #title='shipping_from',
             header=alt.Header(
-                labelAngle=-90,
+                labelAngle=-15,
                 titleOrient='top',
                 labelOrient='bottom',
                 labelAlign='center',
-                labelPadding=10,
+                labelPadding=350,
+                labelFontSize=16,
+                labelColor='white'
             ),
         ),
       ).transform_calculate(
@@ -948,7 +954,7 @@ elif chapter == '6. Testing hypotheses':
     st.altair_chart(stripplot_by_category, use_container_width=False)
 
 
-    stripplot_by_country = alt.Chart(df_country, width=1440/len(select_country)).mark_point().encode(
+    stripplot_by_country = alt.Chart(df_country, width=min(1440/len(select_country), 200)).mark_point().encode(
         x=alt.X(
             'jitter:Q',
             title=None,
@@ -957,18 +963,26 @@ elif chapter == '6. Testing hypotheses':
         ),
         y=alt.Y('price:Q'), # cat lvl 2: N
         color=alt.Color('shipping_from:N'),
-        tooltip=['price in $:N', 'product:N', 'category_level_2',
-                 'category_level_3:N', 'shipping_from', 'shipping_to'],
+        tooltip=[alt.Tooltip('price in $', title='Listed price'),
+                 alt.Tooltip('product', title='Number of offers'),
+                 alt.Tooltip('category_level_2', title='Category lvl 2'),
+                 alt.Tooltip('category_level_3', title='Category lvl 3'),
+                 alt.Tooltip('shipping_from', title='Ships from'),
+                 alt.Tooltip('shipping_to', title='Ships to')
+                 ],
         size='price:Q',
         column=alt.Column(
             'shipping_from',
-            title='shipping_from',
+            title='Listed offers by country of origin',
             header=alt.Header(
-                labelAngle=-90,
+                titleFontSize=32,
+                labelFontSize=24,
+                #labelAngle=-15,
                 titleOrient='top',
                 labelOrient='bottom',
+                labelAnchor='middle',
                 labelAlign='center',
-                labelPadding=10,
+                labelPadding=330,
             ),
         ),
       ).transform_calculate(
@@ -978,8 +992,18 @@ elif chapter == '6. Testing hypotheses':
         spacing=0
     ).configure_view(
         stroke=None
-    )
+    ).configure_axisY(
+    titleFontSize=16,
+).configure_header(
+    titleColor='white',
+    titleFontSize=32,
+    labelColor='white',
+    labelFontSize=16
+).interactive()
+
     st.altair_chart(stripplot_by_country, use_container_width=False)
+
+
 
 
 
@@ -992,18 +1016,24 @@ elif chapter == '6. Testing hypotheses':
         ),
         y=alt.Y('price:Q'), # cat lvl 2: N
         color=alt.Color('shipping_from:N'),
-        tooltip=['price in $:N', 'product:N', 'category_level_2', 'category_level_3:N',
-                 'shipping_from', 'shipping_to'],
+        tooltip=[alt.Tooltip('price in $', title='Listed price'),
+                 alt.Tooltip('product', title='Number of offers'),
+                 alt.Tooltip('category_level_2', title='Category lvl 2'),
+                 alt.Tooltip('category_level_3', title='Category lvl 3'),
+                 alt.Tooltip('shipping_from', title='Ships from'),
+                 alt.Tooltip('shipping_to', title='Ships to')
+                 ],
         size='price:Q',
         column=alt.Column(
             'shipping_to',
-            title='shipping_to',
+            title='Listed offers by receiving country',
             header=alt.Header(
-                labelAngle=-90,
+                labelAngle=-15,
                 titleOrient='top',
                 labelOrient='bottom',
-                labelAlign='center',
-                labelPadding=10,
+                labelAnchor='middle',
+                labelAlign='right',
+                labelPadding=350,
             ),
         ),
       ).transform_calculate(
@@ -1013,5 +1043,14 @@ elif chapter == '6. Testing hypotheses':
         spacing=0
     ).configure_view(
         stroke=None
-    )
+    ).configure_axisY(
+        titleFontSize=16,
+    ).configure_header(
+    titleColor='white',
+    titleFontSize=32,
+    labelColor='white',
+    labelFontSize=16
+).interactive()
+
+
     st.altair_chart(stripplot_by_receiving_country, use_container_width=False)
