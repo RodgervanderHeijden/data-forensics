@@ -5,8 +5,9 @@ import plotly.graph_objects as go
 import numpy as np
 import pycountry
 import altair as alt
+from PIL import Image
 
-# INITIAL SETUP
+# BASE SETUP
 st.set_page_config(page_title=None, page_icon=None, layout='wide', initial_sidebar_state='expanded')
 st.title('Shining a Light on the Dark Web')
 
@@ -19,32 +20,54 @@ def get_all_data():
     # The price in $s is captured as a string, containing both decimal points and commas. Here we clean that to a float
     drugs['price'] = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in drugs['price in $']]
     # to do: add country of origin to the vendor dataset. Can be extracted from drugs dataset.
-    # vendor can have multiple shiipping from locations --> unable to trace exact country of origin
-    vendors = pd.read_csv(r'Vendor_dataset_new.csv')
+    # vendor can have multiple shipping from locations --> unable to trace exact country of origin
+    vendors = pd.read_csv(r'DataForensics\Vendor_dataset_new.csv')
     vendors.drop(vendors.columns[0], axis=1, inplace=True)
     return drugs, vendors
 
 df_drugs, df_vendors = get_all_data()
 
+# Given the countries the user inputs in the sidebar, select the relevant data.
+@st.cache(allow_output_mutation=True)
+def return_specified_data(countries):
+    drugs, vendors = get_all_data()
+    df_country_offers = drugs.loc[drugs['shipping_from'].isin(countries)]
+    unique_vendors = df_country_offers['vendor'].unique().tolist()
+    df_unique_vendors = vendors.loc[vendors['vendor'].isin(unique_vendors)]
+    return df_country_offers, df_unique_vendors
 
-# FUNCTIONS
+# Create function to filter on countries
 def country_multiselect():
     global st_country_select
     shipping_from_countries = list(df_drugs.shipping_from.unique())
     shipping_from_countries_copy = ['All countries'] + shipping_from_countries
     st_country_select = st.multiselect('Select what country/countries you want to see the data of.',
                                        options=shipping_from_countries_copy, default=['All countries'])
+    # load data for all countries when requested
     if 'All countries' in st_country_select:
         st_country_select = shipping_from_countries
     return st_country_select
 
+@st.cache(allow_output_mutation=True)
+def fifth_block(df_drugs):
+    freq = df_drugs['highest_category'].value_counts()
+    # Select frequent values. Value is in the index.
+    frequent_values = freq[freq >= 100].index
+    # Return only rows with value frequency above threshold.
+    df_3 = df_drugs[df_drugs['highest_category'].isin(frequent_values)]
+
+    fig1 = px.strip(df_3, x="price in $", y="highest_category", color="highest_category")
+    fig2 = px.strip(
+        df_3.groupby('highest_category').mean().reset_index().sort_values(by='price in $', ascending=False),
+        x="price in $", y="highest_category", color="highest_category")
+    return fig1, fig2
 
 # SIDEBAR
 with st.sidebar:
     st.header("A dashboard for Data Forensics")
 
     chapter = st.radio("Navigate to:", ("0. Preface",
-                                        "1. Data and data preprocessing",
+                                        "1. Data Description",
                                         "2. Product Insights",
                                         "3. Vendor Insights",
                                         "4. Advanced Insights",
@@ -61,7 +84,6 @@ with st.sidebar:
 
     else:
         pass
-
 
 
 
@@ -92,7 +114,7 @@ if chapter == "0. Preface":
         Insights derived from the retrieved data were diligently analysed, with the key takeaways shared in the 
         dashboard in front of you. The side panel on the left contains a table of contents, which allows for navigation.
         The first pages contain a guided read with interesting insights extracted and highlighted by us. The latter 
-        pages (from 4 onwards) act as a sandbox for the reader to investigate; interactivity is incorporated as much as 
+        pages act as a sandbox for the reader to investigate; interactivity is incorporated as much as 
         possible and strongly encouraged. On some pages additional controls are provided; generally they are in the left
         sidebar panel.   
 
@@ -109,109 +131,86 @@ if chapter == "0. Preface":
         """)
 
 
-# Given the countries the user inputs in the sidebar, select the relevant data.
-@st.cache(allow_output_mutation=True)
-def return_specified_data(countries):
-    drugs, vendors = get_all_data()
-    df_country_offers = drugs.loc[drugs['shipping_from'].isin(countries)]
-    unique_vendors = df_country_offers['vendor'].unique().tolist()
-    df_unique_vendors = vendors.loc[vendors['vendor'].isin(unique_vendors)]
-    return df_country_offers, df_unique_vendors
-
-
-
 # CHAPTER 1
-if chapter == "1. Data and data preprocessing":
-    # df_drugs, df_vendors = return_specified_data(st_country_select)
+if chapter == "1. Data Description":
+    st.header("Architecture overview")
+    st.write("""To obtain data of the Torrez market we had to visit the dark web. To achieve this, the following 
+                environment is implemented. First, a virtual machine is downloaded to create a safe place to 
+                experiment in. To add another layer of protection, we connected to a VPN within the virtual machine. 
+                Finally, we downloaded the Tor browser which allowed us to visit the dark web 
+                and Torrez. 
+             """)
     col_left, col_right = st.beta_columns((3, 1))
     with col_left, col_right:
-        col_left.header("Architecture overview")
-        col_left.write("""
-                    To obtain data of the Torrez market we had to visit the dark web. To achieve this, the following 
-                    enviornment is implemented. First, a virtual machine is downloaded to create a safe place te experiment in. 
-                    To add another layer of protection, we connected to a 
-                    VPN within the virtual machine. Finally, we downloaded the Tor browser which allowed us to visit the dark web 
-                    and subsequently Torrez. 
-                 """)
+        # show image architecture
+        image = Image.open(r'Architecture.png')
+        col_left.image(image)
 
-        col_left.write("___")
-        col_left.header("Data collection")
-        col_left.write("""
-                 By accessing the market, we were exposed to a lot of interesting data. We found that the marketplace 
-                 offers all kinds of illicit goods. Besides drugs and chemicals, also software & malware, fraud and many more 
-                 are offered. Our category of interest, however, is 'Drugs and Chemicals'. 
-                 This section contains all drug and chemical related products offered on the market. 
-                 At the time of scraping, this section had 14.013 product offerings. Besides all these products, 
-                 the vendor pages also contain a lot of valuable information.
-                 
-                 To capture all this relevant information required for analysis, we built our own crawler and scraper 
-                 from scratch. Scraping is done using the BeautifulSoup package in Python. This package allowed us to 
-                 pick the relevant information from the HTML we are interested in. For the product pages we scraped the 
-                 vendor name, category levels, product name, price and shipping locations. The same approach is used for 
-                 the vendor pages. However, this time we scraped the vendor name, rank, verification, number of 
-                 transactions, feedback, and disputes. The crawler that we made allowed us to go through pages to scrape 
-                 all the information. For the product pages, the crawler goes through all of the 721 pages and for the 
-                 vendors, it goes through all vendor pages that have at least one offer in the category 
-                 ‘Drugs and Chemicals’. More specific information can be found in the code, where comments are also 
-                 provided for better understanding the workflow. 
-                 """)
+    st.write("___")
+    st.header("Data collection")
+    st.write("""
+             By accessing the market, we were exposed to a lot of interesting data. We found that the marketplace 
+             offers all kinds of illicit goods. Besides drugs and chemicals, also software & malware, fraud and many more 
+             are offered. Our category of interest, however, is 'Drugs and Chemicals'. 
+             This section contains all drug and chemical related products offered on the market. 
+             At the time of scraping, this section had 14.013 product offerings. Besides all these products, 
+             the vendor pages also contain a lot of valuable information.
+             
+             To capture all this relevant information required for analysis, we built our own crawler and scraper 
+             from scratch. Scraping is done using the BeautifulSoup package in Python. This package allowed us to 
+             pick the relevant information from the HTML we are interested in. For the product pages we scraped the 
+             vendor name, category levels, product name, price and shipping locations. The same approach is used for 
+             the vendor pages. However, this time we scraped the vendor name, rank, verification, number of 
+             transactions, feedback, and disputes. The crawler that we made allowed us to go through pages to scrape 
+             all the information. For the product pages, the crawler goes through all of the 721 pages and for the 
+             vendors, it goes through all vendor pages that have at least one offer in the category 
+             ‘Drugs and Chemicals’. More specific information can be found in the code, where comments are also 
+             provided for better understanding the workflow. 
+             """)
 
-        col_left.write("___")
-        col_left.header("Data description")
-        col_left.write("""
-        Crawling and scraping eventually led to a dataset that can be used for analysis. 
-        We ended up with two different datasets, one that contains the product information and one that contains 
-        the vendor information. We wanted specific insights on the Torrez market and hence only this market is scraped. 
-        The type of data scraped is textual data. Images were not scraped as they were not useful for the analysis we intended to do. 
-        Below you can find the data description; the variable name, the data type and the explanation.
-        """)
+    st.write("___")
+    st.header("Data description")
+    st.write("""
+    Crawling and scraping eventually led to a dataset that can be used for analysis. 
+    We ended up with two different datasets, one that contains the product information and one that contains 
+    the vendor information. We wanted specific insights on the Torrez market and hence only this market is scraped. 
+    The type of data scraped is textual data. Images were not scraped as they were not useful for the analysis we intended to do. 
+    Below you can find the data description; the variable name, the data type and the explanation.
+    """)
 
-        data_description_product = pd.read_excel(r'Data description.xlsx', sheet_name='Blad1')
-        data_description_vendor = pd.read_excel(r'Data description.xlsx', sheet_name='Blad2')
+    # load the tables containing the data descriptions
+    data_description_product = pd.read_excel(r'Data description.xlsx', sheet_name='Blad1')
+    data_description_vendor = pd.read_excel(r'Data description.xlsx', sheet_name='Blad2')
 
-        col_left.subheader("Product data")
-        col_left.table(data_description_product)
-        col_left.subheader("Vendor data")
-        col_left.table(data_description_vendor)
+    st.subheader("Product data")
+    st.table(data_description_product)
+    st.subheader("Vendor data")
+    st.table(data_description_vendor)
 
 
-        col_left.write("___")
-        col_left.header("Raw data")
-        col_left.write("""
-                Have a look at the raw data that we scraped. Two datasets are provided, the product dataset and the vendor dataset.
-                """)
-        col_left.subheader("Product data")
-        col_left.write(""" At the moment of scraping 14.013 offers were posted on Torrez in the Drugs and Chemicals-category. We 
-        scraped all of those; below you can find an overview of the raw data. If desired, you can (de)select columns, you can pick 
-        how many observations are shown and/or you can order any column by clicking on the column name.""")
-        st_ms = col_left.multiselect("Select which columns you want to display.", df_drugs.columns.tolist(),
-                                     default=df_drugs.columns.tolist())
-        st_slider = col_left.slider("Number of observations to display.", 0, len(df_drugs), 10)
-        col_left.dataframe(df_drugs[st_ms].head(st_slider))
+    st.write("___")
+    st.header("Raw data")
+    st.write("""
+            Have a look at the raw data that we scraped. Two datasets are provided, the product dataset and the vendor dataset.
+            """)
+    st.subheader("Product data")
+    st.write(""" At the moment of scraping 14.013 offers were posted on Torrez in the Drugs and Chemicals-category. We 
+    scraped all of those; below you can find an overview of the raw data. If desired, you can (de)select columns, you can pick 
+    how many observations are shown and/or you can order any column by clicking on the column name.""")
+    st_ms = st.multiselect("Select which columns you want to display.", df_drugs.columns.tolist(),
+                                 default=df_drugs.columns.tolist())
+    st_slider = st.slider("Number of observations to display.", 0, len(df_drugs), 10)
+    st.dataframe(df_drugs[st_ms].head(st_slider))
 
-        col_left.subheader("Vendor data")
-        col_left.write(""" At the moment of scraping 668 vendors had active offers on Torrez in the Drugs and Chemicals-category. We 
-        scraped their profiles; below you can find an overview of the data. Again, if desired, you can (de)select columns, you 
-        can pick how many observations are shown and/or you can order any column by clicking on the column name.""")
-        st_ms_vendor = col_left.multiselect("Select which columns you want to display.", df_vendors.columns.tolist(),
-                                            default=df_vendors.columns.tolist())
-        st_slider_vendor = col_left.slider("Number of observations to display.", 0, len(df_vendors), 10)
-        col_left.dataframe(df_vendors[st_ms_vendor].head(st_slider_vendor))
+    st.subheader("Vendor data")
+    st.write(""" At the moment of scraping 668 vendors had active offers on Torrez in the Drugs and Chemicals-category. We 
+    scraped their profiles; below you can find an overview of the data. Again, if desired, you can (de)select columns, you 
+    can pick how many observations are shown and/or you can order any column by clicking on the column name.""")
+    st_ms_vendor = st.multiselect("Select which columns you want to display.", df_vendors.columns.tolist(),
+                                        default=df_vendors.columns.tolist())
+    st_slider_vendor = st.slider("Number of observations to display.", 0, len(df_vendors), 10)
+    st.dataframe(df_vendors[st_ms_vendor].head(st_slider_vendor))
 
-
-@st.cache(allow_output_mutation=False)
-def fifth_block(df_drugs):
-    freq = df_drugs['highest_category'].value_counts()
-    # Select frequent values. Value is in the index.
-    frequent_values = freq[freq >= 100].index
-    # Return only rows with value frequency above threshold.
-    df_3 = df_drugs[df_drugs['highest_category'].isin(frequent_values)]
-
-    fig8 = px.strip(df_3, x="price in $", y="highest_category", color="highest_category")
-    fig10 = px.strip(
-        df_3.groupby('highest_category').mean().reset_index().sort_values(by='price in $', ascending=False),
-        x="price in $", y="highest_category", color="highest_category")
-    return fig8, fig10
 
 
 #CHAPTER 2
@@ -271,27 +270,6 @@ if chapter == "2. Product Insights":
                        width=800, height=700)
     st.plotly_chart(fig4, use_container_width=True)
 
-    #
-    # @st.cache()
-    # def third_violin_block():
-    #     colors = n_colors('rgb(5, 200, 200)', 'rgb(200, 10, 10)', len(df_drugs['highest_category'].unique()),
-    #                       colortype='rgb')
-    #     fig13 = go.Figure()
-    #     fig13.update_layout(
-    #         autosize=True,
-    #     )
-    #     # https://plotly.com/python/violin/#violin-plot-with-only-points
-    #     for category, color in zip(df_drugs['highest_category'].unique(), colors):
-    #         cat_price = df_drugs[df_drugs['highest_category'] == category]['price in $'].values
-    #         fig13.add_trace(go.Violin(x=cat_price, line_color=color, name=category))
-    #
-    #     fig13.update_traces(orientation='h', side='positive', width=3, points=False)
-    #     fig13.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    #     return fig13
-    #
-    #
-    # fig13 = third_violin_block()
-    # st.plotly_chart(fig13, use_container_width=True)
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
@@ -307,11 +285,11 @@ if chapter == "2. Product Insights":
 
     col4, col6 = st.beta_columns(2)
     with col4, col6:
-        fig8, fig10 = fifth_block(df_drugs)
+        fig1, fig2 = fifth_block(df_drugs)
         col4.subheader(f"Drug prices for categories with at least {st_slider_offer_min} offers.")
-        col4.plotly_chart(fig8, use_container_width=True)
+        col4.plotly_chart(fig1, use_container_width=True)
         col6.subheader(f"Average prices for each category with at least {st_slider_offer_min} offers.")
-        col6.plotly_chart(fig10, use_container_width=True)
+        col6.plotly_chart(fig2, use_container_width=True)
 
 # rename misspelled column
 df_vendors.rename(columns={'verifcation': 'verification'}, inplace=True)
@@ -334,8 +312,9 @@ verification.columns = ['verification', 'count']
 
 if chapter == "3. Vendor Insights":
     st.header("Vendor insights")
-    st.subheader("Total number of vendors over time in the category 'Drugs & Chemicals'")
-    st.write("Torrez launched in February 2020 and has become very popular. After a modest start we observe one rapid increase in the number of vendors with at least a listing in the category 'Drugs & Chemicals'. ")
+    st.subheader("Total number of vendors over time")
+    st.write("Torrez launched in February 2020 and has become very popular. After a modest start we observe a "
+             "rapid increase in the number of vendors with at least one listing in the category 'Drugs & Chemicals'. ")
 
     df_vendors['date'] = pd.to_datetime(df_vendors['since'])
     df_vendor_month = df_vendors.groupby(df_vendors['date'].dt.strftime('%B %Y'))['vendor'].count().reset_index()
@@ -362,10 +341,10 @@ if chapter == "3. Vendor Insights":
 
     st.subheader("Rank")
     st.write("The rank indicates the number of sales of the vendor on the market. "
-             "Rank 0 represents 0-9 items sold, Rank 1 represents 10-99 items sold, Rank 3 represents 100-199 items sold, etc. "
-             "A Top seller has over 1000 sales. Only a small percentage of the vendors have a high rank.")
+             "Rank 0 represents 0-9 items sold, Rank 1 represents 10-99 items sold, Rank 3 represents 100-199 items sold, "
+             "etc. A 'TOP' seller has over 1000 sales. We observe only a small number of vendors having a high rank.")
 
-    import plotly.graph_objects as go
+
 
     rank_order = ['Rank 0', 'Rank 1', 'Rank 2', 'Rank 3', 'Rank 4', 'Rank 5', 'Rank 6',
                   'Rank 7', 'Rank 8', 'Rank 9', 'Rank 10', 'TOP',]
@@ -385,7 +364,9 @@ if chapter == "3. Vendor Insights":
 
     st.subheader("Verification level")
     st.write("Every vendor on Torrez that has a positive history from other markets can get a verification badge. "
-             "The level indicates the number of other markets the vendor is active on.")
+             "The level indicates the number of other markets the vendor is active on. Level 1 means that the vendor is "
+             "active on one other market, level 2 indicates activity on two other markets etc. The majority of the vendors "
+             "is only active on Torrez.")
 
     verification_order = ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4",
                           "Level 5", "Level 6", "Level 7", "Level 8",
@@ -508,6 +489,7 @@ if chapter == "3. Vendor Insights":
 
     #    pass
 
+# CHAPTER 5
 if chapter == "5. Create your own reports":
     df_drugs, df_vendors = return_specified_data(st_country_select)
     st.header("Data")
@@ -535,27 +517,18 @@ if chapter == "5. Create your own reports":
     st.dataframe(df_vendors[st_ms_vendor].tail(st_slider_vendor))
 
 
+# CHAPTER 4
 elif chapter == '4. Advanced Insights':
     st.header("Advanced insights")
     st.write("In the previous sections we have provided some general but interesting insights regarding the product "
              "offerings and vendors on Torrez. In this section we will go a step further and analyse the market in "
              "more detail. We are specifically interested in relationships that enable us to better grasp the dynamics "
-             "and interactions within this market. With these new insights the drug trafficking flow becomes more understandable. "
-             "We will first dive into the drugs sold by the top vendors after which we will investigate the effect of trust in this market.")
-
-    # st.header("Hypotheses")
-    # st.subheader("Some hypotheses to be investigated")
-    # df_drugs, df_vendors = get_all_data()
-    # st.write(" * Do vendors select one specialty within drugs or sell a wide range?\n "
-    #          " * Do higher ranked vendors sell special kind of drugs?\n"
-    #          " * Do trusted vendors have more transactions?\n"
-    #          " * Is worldwide shipping a predictor for number of deals?\n"
-    #          " * Is trust a factor in prices?\n"
-    #          " * Does the country of origin have an effect on prices?\n"
-    #          " * Do higher ranked vendors have higher prices?")
+             "and interactions within this market. This allows us to better understand the drug flow on the dark web."
+             "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the effect of "
+             "trust on the sales in this market.")
 
     st.write("___")
-    st.header("Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
+    st.header("1. Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
     st.write("We wondered whether the vendors on the dark web are well-versed in the entire criminal circuit or might just "
              "have a connection with one kind of drugs and are experts in that. Additionally, it would be possible that "
              "several drugs are often sold in conjunction. For instance, cocaine and psychedelics have vastly different "
@@ -575,6 +548,7 @@ elif chapter == '4. Advanced Insights':
 
     st.write("The resulting figure, as shown below, is very information dense. We will cover some interesting insights, "
              "but have left some others to be discovered by the reader. ")
+    st.write("")
 
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
@@ -622,10 +596,10 @@ elif chapter == '4. Advanced Insights':
     st.altair_chart(
         (vendor_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
-            titleFontSize=20,
+            titleFontSize=15,
             labelAngle=-30,
         ).configure_title(
-            fontSize=32
+            fontSize=24
         ).properties(
             height=500, title="What categories of drugs are sold in conjunction?"
         ), use_container_width=True
@@ -656,13 +630,13 @@ elif chapter == '4. Advanced Insights':
         Based on the available offers per vendor, we can identify three blocks of vendors. 
         #### &ensp;&ensp;&ensp;&ensp; 1. _Cannabis & Hash_
         #### &ensp;&ensp;&ensp;&ensp; 2. _Dissociatives, Ecstacy, Opiates, Stimulants, Psychedelics_
-        #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_
-        
-        After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated 
-        into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the
-        second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
-        have specialized vendors that do not or barely sell anything else. 
-        
+        #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_""")
+
+    st.write("")
+    st.markdown("""After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated "
+             "into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the"
+             "second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
+        have specialized vendors that do not or barely sell anything else.       
         """)
 
     st.write("___")
@@ -677,7 +651,7 @@ elif chapter == '4. Advanced Insights':
              "order of the graph above. Notably, one exception is in place: _benzos_ (red). Torrez uses the subcategory "
              "_pills_ for _Ecstacy_ as well, and thus these are plotted together. The color coding is correct, for a "
              "more convenient interpretation the other _benzos_ category is plotted next to the _pills_. ")
-
+    st.write("")
 
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
@@ -736,12 +710,12 @@ elif chapter == '4. Advanced Insights':
     st.altair_chart(
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
-            titleFontSize=20,
+            titleFontSize=15,
             labelAngle=-30,
         ).configure_axisY(
             labelAngle=0,
         ).configure_title(
-            fontSize=32
+            fontSize=24
         ).properties(
             height=700, title="What subcategories of drugs are sold in conjunction?"
         ), use_container_width=True
@@ -1121,74 +1095,104 @@ elif chapter == '4. Advanced Insights':
     st.altair_chart(stripplot_by_receiving_country, use_container_width=False)
 
     st.write("___")
-    st.header("To what extent does trust play a role?")
-    st.write("Trust plays a key role in any transaction. Especially on the dark web where vendors are anonymous. "
-             "In order for vendors to run a successful business, they need to gain the consumers' trust. "
-             "TorreZ awards vendors several indicators of their experience and trustworthiness: the rank, the verificaiton level and the feedbacks. "
-             "The rank of the vendors shows how many sales a vendor has on the TorreZ market. A higher rank indicates a more experienced vendor. "
-             "The verification level indicates the vendors activity on other markets. The higher the level, the more markets the vendor is active on. "
-             "Finally, TorreZ allows consumers to leave feedback of the vendor after a transaction has taken place. "
-             "We were wondering if these trust indicators could lead to a difference in consumer behavior. ")
+    st.header("2. To what extent does trust play a role on Torrez?")
+    st.write("We assume that trust plays a key role in any transaction. Especially on the dark web where vendors are anonymous. "
+             "Torrez awards vendors several labels that inidcate their experience and trustworthiness: the rank and the verificaiton level. "
+             "The rank indicates the experience of the vendor in terms of number of sales on Torrez. "
+             "The verification level indicates the vendors activity on other markets. The higher the level, the more other markets the vendor is also active on. "
+             "We were wondering if these labels could lead to a difference in consumer behavior. ")
 
-    st.subheader("Do vendors with a higher verification level have more transactions?")
+    st.subheader("Do vendors with a higher verification level have more sales?")
+    st.write("Verification level, to a certain extent, indicates the trustworthiness of the vendors. Vendors that have "
+             "a positive history from other markets (and can prove that!) can get a higher verification level."
+             "So, the higher the level, the more other markets the vendor is active on (with good reputations). "
+             "We were interested to find out if the verification level is actually a factor in the number of sales a vendor has. "
+             "Some vendors have been active on Torrez for a longer period than others. Therfore, to make a fair comparison we "
+             "will look at the number of transactions per month for each vendor.")
 
     df_vendors['date'] = pd.to_datetime(df_vendors['since'])
     now = pd.to_datetime('Apr 18, 2021')
     df_vendors['num_months'] = (now.year - df_vendors.date.dt.year) * 12 + (now.month - df_vendors.date.dt.month)
     df_vendors['transactions_month'] = df_vendors['transactions']/df_vendors['num_months']
 
-    verification_order = ["Verification Level 1", "Verification Level 2", "Verification Level 3", "Verification Level 4",
-                          "Verification Level 5", "Verification Level 6", "Verification Level 7", "Verification Level 8",
-                          'Verification Level 9', 'Verification Level 10', 'Verification Level 11', 'Verification Level 12',
-                          'Verification Level 13', 'Verification Level 14', 'Verification Level 15', 'Verification Level 16',
-                          'Verification Level 19']
+    verification_order = ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4",
+                          "Level 5", "Level 6", "Level 7", "Level 8",
+                          'Level 9', 'Level 10', 'Level 11', 'Level 12',
+                          'Level 13', 'Level 14', 'Level 15', 'Level 16',
+                          'Level 19']
 
-
+    df_vendors['verification'] = df_vendors.verification.str.replace('Verification ', "").str.replace("No verification level", "Level 0")
     fig = px.box(df_vendors, x='verification',
-                   y="transactions_month", title='Boxplot', category_orders={'verification':verification_order})
+                   y="transactions_month", title='Boxplots of the sales per month per verification level'
+                 , category_orders={'verification':verification_order},
+                       labels={"transactions_month": "sales per month",
+                               "verification":"verification level"})
     st.plotly_chart(fig, use_container_width=True)
 
 
-    st.markdown("""
-                ####  Higher verified vendors do not have more transactions on average.
-                
-                The chart indicates that the verification level is not correlated with the number of transactions per month.
-             Apparently, level 8 and 11 had the most transactions per month on average.
-             Looking at the median, it even seems that higher level vendors have a lower number of sales per month.
-             This could potentially be explained by different products offerings or products with higher prices on average. """)
+    st.markdown("""The boxplots indicate the distributions of the sales per month for the different verification levels.
+                Some distributions, for instance of level 8, are more spread.
+                The medians of the boxplots, indicate the verification level are not necessarily correlated with the sales per month.
+              Let's have a look at the average sales per month per verification level to get a clearer idea. """)
 
+    df_vendors_grouped = df_vendors.groupby('verification')['transactions_month'].mean().reset_index()
+    fig = px.bar(df_vendors_grouped, x='verification',
+                     y="transactions_month", title='Average sales per month per verification level'
+                  , category_orders={'verification': verification_order},
+                  labels={"transactions_month": "sales per month",
+                          "verification": "verification level"}
+                  )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.write("The average sales per month does not indicate a positive relation with the verification level. Vendors with "
+             "higher levels do not necessarily have more sales per month. It even seems that higher level vendors have less sales per month."
+             " This could potentially be explained by different products offerings or products with higher prices on average.")
+
+    st.write("___")
     st.subheader("Do vendors with a higher verification level have more different product offerings?")
+    st.write("We just saw that the highest level vendors have on average less sales per month. "
+             "We wondered to what extent this could be related to different product offerings."
+             " So, to what extent do higher level vendors differentiate in their product offerings?")
+    st.write("")
 
+
+    df_drugs.category_level_2.fillna("Not provided", inplace=True)
     nr_offers = pd.DataFrame(df_drugs.groupby(['vendor', 'category_level_2']).vendor.count())
     nr_offers.columns = ['nr_offers']
     nr_offers.reset_index(inplace=True)
     # df_vendors = df_vendors.merge(nr_offers, on='vendor', how='left')
     # df_combined = df_vendors.merge(df_drugs, on='vendor')
     df_verification = nr_offers.merge(df_vendors, on='vendor')
-    df_verification.category_level_2.fillna("Not provided", inplace=True)
-    df_combined_grouped = df_verification.groupby(['verification', 'category_level_2']).mean().reset_index()
+    # df_verification.category_level_2.fillna("Not provided", inplace=True)
+    df_combined_grouped = df_verification.groupby(['verification', 'category_level_2']).sum().reset_index()
 
+    df_temp = df_vendors.groupby(['verification']).vendor.count().reset_index()
+    df_temp.rename({'vendor': 'vendor_count'}, axis=1, inplace=True)
+    df_combined_grouped_new = df_combined_grouped.merge(df_temp, on='verification')
+    df_combined_grouped_new['offer_verification_level'] = df_combined_grouped_new.nr_offers / df_combined_grouped_new.vendor_count
+    df_not_provided_2 = df_combined_grouped_new[df_combined_grouped_new['category_level_2'] == 'Not provided']
+    df_rest_2 = df_combined_grouped_new[~df_combined_grouped_new.isin(df_not_provided_2)].dropna(axis=0)
 
-    df_plot_data = df_combined_grouped.groupby(['verification', 'category_level_2']).mean().reset_index()[
-        ['verification', 'category_level_2', 'nr_offers']]
-    df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
-    df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
+    # df_plot_data = df_combined_grouped.groupby(['verification', 'category_level_2']).mean().reset_index()[
+    #     ['verification', 'category_level_2', 'nr_offers']]
+    # df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
+    # df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
 
     level_2_order = ['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
                      'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
                      'Accessories', 'Tobacco', 'Not provided']
 
 
-    vendor_top = alt.Chart(df_combined_grouped).mark_circle().encode(
+    vendor_top = alt.Chart(df_rest_2).mark_circle().encode(
         alt.Y('category_level_2:O', sort=level_2_order, title='Categories'),
         alt.X('verification:N', sort=verification_order, title='Verification level'),
-        alt.Size('nr_offers:Q', legend=None),
-        alt.Color('nr_offers:Q', legend=None),  # sort='descending'),
+        alt.Size('offer_verification_level:Q', legend=None),
+        alt.Color('offer_verification_level:Q', legend=None),  # sort='descending'),
 
         opacity=alt.value(1),
         tooltip=[alt.Tooltip('verification', title='Level'),
                  alt.Tooltip('category_level_2', title='Category'),
-                 alt.Tooltip('nr_offers', title='Number of offers')
+                 alt.Tooltip('offer_verification_level', title='Number of offers')
                  ]
     )
 
@@ -1199,32 +1203,32 @@ elif chapter == '4. Advanced Insights':
     ).encode(
         alt.Y('category_level_2:N', sort=level_2_order),
         alt.X('verification:N', sort=verification_order),
-        alt.Size('nr_offers:Q', legend=None),
+        alt.Size('offer_verification_level:Q', legend=None),
         tooltip=[alt.Tooltip('verification', title='Level'),
                  alt.Tooltip('category_level_2', title='Category'),
-                 alt.Tooltip('nr_offers', title='Number of offers')
+                 alt.Tooltip('offer_verification_level', title='Number of offers')
                  ]
     )
 
     st.altair_chart(
         (vendor_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
-            titleFontSize=20,
+            titleFontSize=15,
             labelAngle=-30,
         ).configure_title(
-            fontSize=32
+            fontSize=24
         ).properties(
-            height=500, title="What categories of drugs are sold in conjunction?"
+            height=500, title="Product offerings per verification level"
         ), use_container_width=True
     )
 
     st.markdown("""
                 ####  Higher verified vendors have different product offerings
 
-                From the "Vendor insights" page we already observed a low number of vendors having a high verification level. 
+                From the "Vendor Insights" page we already observed a low number of vendors having a high verification level. 
                 Looking at their product offerings in more detail, we see that they deviate from the lower verified vendors. 
                 To make a fair comparison we computed the mean number of offers per category per verification level. 
-                Again, the size as well as the color map the (mean) number of offers. 
+                The mean number of offers is mapped to the size as well as the color.
                 Although higher levels are scarce, we observe a difference in their product offerings. 
                 The lower level vendors sell wide range of drugs while higher level vendors focus on specific categories. 
                 Especially the vendors in level 15 stand out with their extreme offer in Steroids.
@@ -1234,8 +1238,8 @@ elif chapter == '4. Advanced Insights':
     st.write("We see that there are just 3 vendors in level 15 and SteroidWarehouse explains the great offer in steroids.")
 
     # df_combined_level_15 = df_combined[df_combined.verification == 'Verification Level 15']
-    df_verification = df_verification[['vendor', 'verification', 'category_level_2', 'nr_offers']]
-    st.write(df_verification[df_verification.verification == 'Verification Level 15'].reset_index(drop=True))
+    df_verification_2 = df_verification[['vendor', 'verification', 'category_level_2', 'nr_offers']]
+    st.write(df_verification_2[df_verification_2.verification == 'Level 15'].reset_index(drop=True))
 
 
     # fig = px.box(df_combined, x='verification',
@@ -1243,15 +1247,22 @@ elif chapter == '4. Advanced Insights':
     # st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Do vendors with positive feedback have more transactions?")
-    st.write("Finally, we also want to find out if the consumers can be convinced to buy products from vendors that have earned positive feedback.")
+    st.write("Torrez provides the consumers the possibility to give feedback on their experience with vendors. "
+             "The percentage of positive feedback is a great indicator of the trustworthiness of the vendor and its products."
+             " We were wondering if these two variables have a clearer relationship. To get a fair ...")
 
     df_vendors.verification.fillna('No verification level', inplace=True)
+    # df_verification['feedback_positive_percentage'] = df_verification['feedback_positive'].apply(
+    #     lambda x: x.split('%')[0])
+    # df_verification['feedback_count'] = df_verification['feedback_positive'].apply(lambda x: x.split('(')[1]).apply(
+    #     lambda x: x.split(')')[0])
+    # df_verification['feedback_count'] = df_verification['feedback_count'].astype(int)
+    df_verification = df_verification[df_verification['feedback_total'] != 0]
 
-    # df_vendors['feedback_positive'] = df_vendors['feedback_positive'].apply(lambda x: x.split('%')[0])
-    # df_vendors['feedback_positive'] = df_vendors.feedback_positive.apply(pd.to_numeric)
-    fig = px.scatter(df_vendors, x='feedback_positive',
-                   y="transactions_month", title='Boxplot', color='verification')
+    fig = px.scatter(df_verification, x='feedback_positive',
+                   y="transactions_month", title='Sales per month vs feedback', color='verification',
+                       labels={"transactions_month": "sales per month",
+                               "feedback_positive":"percentage of positive feedback"})
     st.plotly_chart(fig, use_container_width=True)
 
-    st.write(np.corrcoef(df_vendors['feedback_positive'], df_vendors['transactions_month']))
-    st.write(df_vendors)
+    st.write(np.corrcoef(df_verification['feedback_positive'], df_verification['transactions_month']))
