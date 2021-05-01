@@ -313,9 +313,9 @@ if chapter == "2. Product Insights":
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
-        df_data_ordered_by_price = df_drugs.groupby('highest_category').mean().reset_index().sort_values(
-            by='price', ascending=False)
 
+        lvl_2_cats = ['Accessories', 'Benzos', 'Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates',
+                      'Prescriptions Drugs', 'Psychedelics', 'Steroids', 'Stimulants', 'Weight Loss', 'Tobacco', ]
         order_list = ['Dissociatives', 'RC', 'GBL', 'Powder', 'Benzos', 'Speed', 'Meth', 'Ecstasy',
                       'Drugs and Chemicals', 'Heroin', 'Cocaine', 'Oxycodone', 'Ketamine', '2C-B', 'Opiates', 'MDMA',
                       'Vaping', 'Cannabis & Hash', 'Stimulants', 'Synthetic', 'LSD', 'Buds & Flowers', 'Vyvanse',
@@ -324,17 +324,21 @@ if chapter == "2. Product Insights":
                       'Steroids', 'Tobacco', 'Edibles', 'TMA', 'Seeds', 'Weight Loss', 'DOM', 'Accessories', 'DOC',
                       'Prerolls', 'MXE']
         plot_order = {'category_level_3': order_list,
-                      'highest_category': order_list}
+                      'highest_category': order_list,
+                      'category_level_2': lvl_2_cats}
         df_plot_data = df_drugs[df_drugs['category_level_3'].isin(order_list)]
         df_plot_data.dropna(subset=['highest_category', 'price'], how='any', inplace=True)
-        print(len(df_plot_data))
+        df_data_ordered_by_price = df_plot_data.groupby(
+            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
+            by='price', ascending=False)
 
         category_prices.subheader("Drug prices for all categories for the selected location(s)")
         fig_category_prices = px.strip(df_plot_data,
                                        x="price",
                                        y="highest_category",
                                        color="category_level_2",
-                                       category_orders=plot_order)
+                                       category_orders=plot_order,
+                                       )
         fig_category_prices.update_layout(width=800, height=1200)
         category_prices.plotly_chart(fig_category_prices, use_container_width=True)
 
@@ -342,7 +346,7 @@ if chapter == "2. Product Insights":
         fig_category_avg_prices = px.strip(df_data_ordered_by_price,
                                            x="price",
                                            y="highest_category",
-                                           color="highest_category",
+                                           color="category_level_2",
                                            category_orders=plot_order)
         fig_category_avg_prices.update_layout(width=800, height=1200)
         category_avg_prices.plotly_chart(fig_category_avg_prices, use_container_width=True)
