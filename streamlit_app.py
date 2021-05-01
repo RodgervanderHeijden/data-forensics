@@ -23,6 +23,8 @@ def get_all_data():
     # vendor can have multiple shipping from locations --> unable to trace exact country of origin
     vendors = pd.read_csv(r'.\Vendor_dataset_new.csv')
     vendors.drop(vendors.columns[0], axis=1, inplace=True)
+    # rename misspelled column
+    vendors.rename(columns={'verifcation': 'verification'}, inplace=True)
     return drugs, vendors
 
 
@@ -311,13 +313,38 @@ if chapter == "2. Product Insights":
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
-        fig_category_prices = px.strip(df_drugs, x="price", y="highest_category", color="highest_category")
-        fig_category_avg_prices = px.strip(df_drugs.groupby('highest_category').mean().reset_index().sort_values(
-            by='price', ascending=False),
-            x="price", y="highest_category", color="highest_category")
+        df_data_ordered_by_price = df_drugs.groupby('highest_category').mean().reset_index().sort_values(
+            by='price', ascending=False)
+
+        order_list = ['Dissociatives', 'RC', 'GBL', 'Powder', 'Benzos', 'Speed', 'Meth', 'Ecstasy',
+                      'Drugs and Chemicals', 'Heroin', 'Cocaine', 'Oxycodone', 'Ketamine', '2C-B', 'Opiates', 'MDMA',
+                      'Vaping', 'Cannabis & Hash', 'Stimulants', 'Synthetic', 'LSD', 'Buds & Flowers', 'Vyvanse',
+                      '5-MeO-DMT', 'Pills', 'Mushrooms', 'Hash', 'Adderal', '4-FA', 'Crack', 'Shake', 'DMT', 'GHB',
+                      'Mescaline', 'Topical', 'Codeine', 'Psychedelics', 'Buprenorphine', 'Prescriptions Drugs',
+                      'Steroids', 'Tobacco', 'Edibles', 'TMA', 'Seeds', 'Weight Loss', 'DOM', 'Accessories', 'DOC',
+                      'Prerolls', 'MXE']
+        plot_order = {'category_level_3': order_list,
+                      'highest_category': order_list}
+        df_plot_data = df_drugs[df_drugs['category_level_3'].isin(order_list)]
+        df_plot_data.dropna(subset=['highest_category', 'price'], how='any', inplace=True)
+        print(len(df_plot_data))
+
         category_prices.subheader("Drug prices for all categories for the selected location(s)")
+        fig_category_prices = px.strip(df_plot_data,
+                                       x="price",
+                                       y="highest_category",
+                                       color="category_level_2",
+                                       category_orders=plot_order)
+        fig_category_prices.update_layout(width=800, height=1200)
         category_prices.plotly_chart(fig_category_prices, use_container_width=True)
+
         category_avg_prices.subheader("Average prices for each category for the selected location(s)")
+        fig_category_avg_prices = px.strip(df_data_ordered_by_price,
+                                           x="price",
+                                           y="highest_category",
+                                           color="highest_category",
+                                           category_orders=plot_order)
+        fig_category_avg_prices.update_layout(width=800, height=1200)
         category_avg_prices.plotly_chart(fig_category_avg_prices, use_container_width=True)
 
     col4, col6 = st.beta_columns(2)
@@ -328,8 +355,7 @@ if chapter == "2. Product Insights":
         col6.subheader(f"Average prices for each category with at least 100 offers for the selected location(s)")
         col6.plotly_chart(fig2, use_container_width=True)
 
-# rename misspelled column
-df_vendors.rename(columns={'verifcation': 'verification'}, inplace=True)
+
 
 # # Add number of offers to vendor df
 # nr_offers = pd.DataFrame(df_drugs.groupby('vendor').vendor.count())
