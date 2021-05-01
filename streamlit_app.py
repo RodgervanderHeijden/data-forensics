@@ -205,12 +205,53 @@ if chapter == "1. Data Description":
 # CHAPTER 2
 if chapter == "2. Product Insights":
     st.header("Product insights")
-    st.subheader("Shipping locations")
-    st.write(
-        'The distribution of the shipping from & shipping to locations of all drug and chemical related products on ToRReZ. '
-        'The majority of products is shipped from either the UK, US, Germany or the Netherlands and almost half of all products can be shipped worldwide.')
+
     country_multiselect()
     df_drugs, df_vendors = return_specified_data(st_country_select)
+
+    st.write(
+        "One of the two data sets we have scraped details the 14.013 offers that existed. Here we describe that data "
+        "and showcase some interesting aspects we have found. In essence the figures on this page cover all countries, "
+        "but the option to select specific countries within the data set exists. The tool below provides all options in"
+        " both a dropdown menu and a search box; the figures will then automatically update. Do not worry, this setting"
+        " does not persist over the entire dashboard. Lastly, do note that the page was designed with the sidebar "
+        "collapsed, in expanded state some labels are not (fully) visible. "
+    )
+    st.subheader("Shipping locations")
+
+    st.markdown(
+        "Vendors have possibility for each individual offer to state what country the drugs are shipped from, and what "
+        "shipping destinations exists. In our dataset we see *4* primary countries from which the drugs are sold: "
+        "the _United Kingdom_, the _United States, Germany_ and the _Netherlands_. Despite there being 33 countries in "
+        "total, these four amount to 82.0% of all offers. "
+    )
+
+    st.write(
+        "On the right we see the 'receiving' countries outlined: the locations which the drugs are possible to get "
+        "shipped to. Here we see that nearly half of all drugs are sold worldwide, indicating that smuggling drugs "
+        "across (potentially) multiple borders is not a large hurdle for quite some vendors. The United States hold "
+        "second place, with the United Kingdom in fourth. Both countries have a sizable portion of drugs that are "
+        "destined for the own market (US is the origin in 21.1% and the (only) destination in 17.2%, UK is the origin "
+        "in 27% and the (only) destination in 11.4%). Notably, the shares for Australia do not change much (5.61% on "
+        "the supply side and 5.42% on the demand side). "
+    )
+
+    st.write(
+        "Though we do not have enough finegrained data to fully investigate this (for instance, we only see offers but "
+        "not which offers get sold), we assume that the border patrol does take a part in it. The US and Australia have"
+        " a large proportion for their own market, the UK has a significant (but lesser) percentage, and the highly "
+        "frequently origin countries of Germany and the Netherlands play a very small part. Due to the Schengen "
+        "agreement, or so we openly hypothesize, shipping drugs within the European Union is relatively convenient and "
+        "risk free, so vendors can offer coverage for the entirety of Europe (as we see on the third place). "
+    )
+
+    st.write(
+        "Another interesting finding is that we only see European and North American countries - along with Australia -"
+        " but no Asian countries. However, when we look at the origin of the drugs, both China and India are present. "
+        "Combined they represent 675 offers, yet nearly all of those are intended for the international market. China, "
+        "India or Asia combined all have fewer than 100 offers that ship to these locations. "
+    )
+    st.write("___")
 
     col_left, col_right = st.beta_columns(2)
     with col_left, col_right:
@@ -220,9 +261,9 @@ if chapter == "2. Product Insights":
         df_origin.loc[df_origin[
                           'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
         fig3 = px.pie(df_origin, values='shipping_from', names='country',
-                      title=f'Shipping from (having at least 100 offers):')
-        fig7 = go.Figure()
+                      title='Shipping from (having at least 100 offers):')
 
+        fig7 = go.Figure()
         df_destination = pd.DataFrame(df_drugs.shipping_to.value_counts())
         df_destination.reset_index(inplace=True)
         df_destination.columns = ['country', 'shipping_from']
@@ -230,19 +271,21 @@ if chapter == "2. Product Insights":
             df_destination[
                 'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
         fig7 = px.pie(df_destination, values='shipping_from', names='country',
-                      title=f'Shipping to (having at least 100 offers):')
+                      title='Shipping to (having at least 100 offers):')
 
         fig3.update_layout(autosize=False,
-                           width=600,
-                           height=450)
+                           width=750,
+                           height=600)
 
         fig7.update_layout(autosize=False,
-                           width=600,
-                           height=450)
+                           width=750,
+                           height=600)
 
         col_left.plotly_chart(fig3)
         col_right.plotly_chart(fig7)
 
+    st.write("___")
+    st.subheader("A map showing the countries of origin. ")
     input_countries = df_2.country
     country_3 = []
     for country in input_countries:
@@ -257,11 +300,14 @@ if chapter == "2. Product Insights":
                          hover_name="country",  # column to add to hover information
                          color_continuous_scale=px.colors.sequential.ice_r)
     fig4.update_layout(
-        title_text='A map displaying the (self-reported) locations of the dealers. The darker the color, the more dealers.'
-        , title_x=0.5)
+        title_text='A map displaying the (self-reported) locations of origin of each offer. The darker the color, the '
+                   'more offers. Specific numbers are provided on hover.', title_x=0.5)
     fig4.update_layout(coloraxis_showscale=False,
                        width=800, height=700)
     st.plotly_chart(fig4, use_container_width=True)
+
+    st.write("___")
+    st.header("Drug pricing")
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
@@ -269,17 +315,17 @@ if chapter == "2. Product Insights":
         fig_category_avg_prices = px.strip(df_drugs.groupby('highest_category').mean().reset_index().sort_values(
             by='price', ascending=False),
             x="price", y="highest_category", color="highest_category")
-        category_prices.subheader("Drug prices for all categories")
+        category_prices.subheader("Drug prices for all categories for the selected location(s)")
         category_prices.plotly_chart(fig_category_prices, use_container_width=True)
-        category_avg_prices.subheader("Average prices for each category")
+        category_avg_prices.subheader("Average prices for each category for the selected location(s)")
         category_avg_prices.plotly_chart(fig_category_avg_prices, use_container_width=True)
 
     col4, col6 = st.beta_columns(2)
     with col4, col6:
         fig1, fig2 = fifth_block(df_drugs)
-        col4.subheader(f"Drug prices for categories with at least 100 offers.")
+        col4.subheader(f"Drug prices for categories with at least 100 offers for the selected location(s)")
         col4.plotly_chart(fig1, use_container_width=True)
-        col6.subheader(f"Average prices for each category with at least 100 offers.")
+        col6.subheader(f"Average prices for each category with at least 100 offers for the selected location(s)")
         col6.plotly_chart(fig2, use_container_width=True)
 
 # rename misspelled column
@@ -635,6 +681,7 @@ elif chapter == '4. Advanced Insights':
         'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
         'GBL', 'Ketamine', # Dissociatives
         'GBL', 'Ketamine',  # Dissociatives
+        'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
         'Powder',  # Benzos
         'Codeine', 'Heroin', 'Oxycodone', 'RC',  # Opiates
@@ -768,6 +815,7 @@ elif chapter == '4. Advanced Insights':
     level_3_order = [
         'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
         'GBL', 'Ketamine', # Dissociatives
+        'GBL', 'Ketamine',  # Dissociatives
         'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
         'Powder',  # Benzos
