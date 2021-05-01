@@ -21,7 +21,7 @@ def get_all_data():
     drugs['price'] = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in drugs['price in $']]
     # to do: add country of origin to the vendor dataset. Can be extracted from drugs dataset.
     # vendor can have multiple shipping from locations --> unable to trace exact country of origin
-    vendors = pd.read_csv(r'.\Vendor_dataset_new.csv')
+    vendors = pd.read_csv(r'Vendor_dataset_new.csv')
     vendors.drop(vendors.columns[0], axis=1, inplace=True)
     # rename misspelled column
     vendors.rename(columns={'verifcation': 'verification'}, inplace=True)
@@ -599,8 +599,6 @@ if chapter == "3. Vendor Insights":
 #                         x="highest_category", title='Distribution of number of categories (highest_category)', nbins=50)
 #    col_2.plotly_chart(fig17)
 
-#    pass
-
 # CHAPTER 4
 elif chapter == '4. Advanced Insights':
     st.header("Advanced insights")
@@ -608,8 +606,8 @@ elif chapter == '4. Advanced Insights':
              "offerings and vendors on ToRReZ. In this section we will go a step further and analyse the market in "
              "more detail. We are specifically interested in relationships that enable us to better grasp the dynamics "
              "and interactions within this market. This allows us to better understand the drug flow on the dark web."
-             "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the effect of "
-             "trust on the sales in this market.")
+             "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the "
+             "effect of trust on the sales in this market.")
 
     st.write("___")
     st.header("1. Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
@@ -621,15 +619,15 @@ elif chapter == '4. Advanced Insights':
         "of the other. We set out to investigate that. ")
 
     st.write("ToRReZ works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
-             "can decide not to further specify their offers. Our dataset is specifically selected within the first level, "
-             "'Drugs & Chemicals'. The chart beneath showcases the spread of the second level categories. "
-             " We have selected the 50 vendors with the highest amount of active offers at the time of the scraping,"
-             " as that would give us the most insight. The results in a cut-off of 63 offers. The categories are sorted "
-             "on the quantity of the offers (descending), similarly, the vendors are sorted as well (descending). "
-             "The size of the dots refers to the amount of offers for that specific category and vendor combination; "
-             "specific numbers are visible in the tooltip when hovering. The color is based on the same metric, with "
-             "more blue matching to more offers. As not all offers had a specified category assigned, we assigned those "
-             "offers an 'Not provided' label, plotted them on the bottom and colored them gray.")
+             "can decide not to further specify their offers. Our dataset is specifically selected within the first "
+             "level, 'Drugs & Chemicals'. The chart beneath showcases the spread of the second level categories. We "
+             "have selected the 50 vendors with the highest amount of active offers at the time of the scraping, as "
+             "that would give us the most insight. The results in a cut-off of 63 offers. The categories are sorted on "
+             "the quantity of the offers (descending), similarly, the vendors are sorted as well (descending). The size"
+             " of the dots refers to the amount of offers for that specific category and vendor combination; specific "
+             "numbers are visible in the tooltip when hovering. The color is based on the same metric, with more blue "
+             "matching to more offers. As not all offers had a specified category assigned, we assigned those offers an"
+             " 'Not provided' label, plotted them on the bottom and colored them gray.")
 
     st.write(
         "The resulting figure, as shown below, is very information dense. We will cover some interesting insights, "
@@ -720,7 +718,6 @@ elif chapter == '4. Advanced Insights':
         #### &ensp;&ensp;&ensp;&ensp; 2. _Dissociatives, Ecstacy, Opiates, Stimulants, Psychedelics_
         #### &ensp;&ensp;&ensp;&ensp; 3. _Benzos, Prescriptions Drugs, Steroids, Weight Loss, Accessories_""")
 
-    st.write("")
     st.markdown("""After noting the peculiarities of the weed sales, the remaining categories can very distinctively be separated "
              "into two separate groups: drugs sold by almost all vendors and drugs sold by a select few vendors. Drugs in the"
              "second group have vendors which also basically sell all drugs in that group, while the drugs in the last group
@@ -755,8 +752,9 @@ elif chapter == '4. Advanced Insights':
     df_rest = df_plot_data[~df_plot_data.isin(df_not_provided)].dropna(axis=0)
 
     level_3_order = [
-        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
-        'GBL', 'Ketamine', # Dissociatives
+        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping',
+        # Cannabis & Hash
+        'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
         'Powder',  # Benzos
         'Codeine', 'Heroin', 'Oxycodone', 'RC',  # Opiates
@@ -810,7 +808,7 @@ elif chapter == '4. Advanced Insights':
     )
 
     st.markdown("""
-        ### 1. _Buds & Flowers_ explains popularity _Cannabis & Hash_
+        ### 5. _Buds & Flowers_ explains popularity _Cannabis & Hash_
         
         With the noted presence of _Cannabis & Hash_, we see that _Buds & Flowers_ are mainly responsible for this 
         effect. Most subcategories however are barely sold, not in quantity in offers nor in quantity of vendors. A 
@@ -818,7 +816,7 @@ elif chapter == '4. Advanced Insights':
         matters to prospective buyers. For other types of drugs, say cocaine, only purity matters, and individual 
         vendors do not have dozens of types of cocaine. 
         
-        ### 2. _Ketamine_, _MDMA_ and _Cocaine_ are popular
+        ### 6. _Ketamine_, _MDMA_ and _Cocaine_ are popular
         
         On the other hand, _Ketamine_, _MDMA_ and _Cocaine_ are sold by a lot of different vendors (and often the same 
         vendors), but a single vendor has at most 28 offers of one category. We can hypothesize about the underlying 
@@ -826,7 +824,7 @@ elif chapter == '4. Advanced Insights':
     """)
 
     st.markdown("""
-        ### 3. Several subcategories are only sold by one or a few vendors
+        ### 7. Several subcategories are only sold by one or a few vendors
         
         For instance, the subcategories as _Seeds_, _Synthetic_, _GBL_, _Powder_, _Codeine_, _4-FA_, _TMA_, _DMT_ and 
         _Mescaline_ are only offered by at most two vendors out of the top 50. In a similar vain, vendors that offer 
@@ -835,34 +833,30 @@ elif chapter == '4. Advanced Insights':
         _Opiates_ (beige) categories only sell one specific subcategory. Due to our limited expertise we cannot 
         formulate a hypothesis that could potentially explain this.
         
-        ### 4. _Prescription drugs_, _Steroids_ and _Weight Loss_ drugs do not have subcategories
+        ### 8. _Prescription drugs_, _Steroids_ and _Weight Loss_ drugs do not have subcategories
  
         With a total of 1158 offers within these categories, one could propose that further specification is in place. 
         ToRReZ however does not allow any subcategories within these categories. Scrolling through the offers here show
         a wide variety of drugs in each one, though we're unaware whether a proper (categorical) distinction could 
-        possibly be created. 
-        
-        Furthermore, the accessories category does not have subcategories as well. However, with only 10 offers this 
-        would not benefit anyone. Additionally, several listings should not have been placed in the _Drugs & Chemicals_
-        main category of ToRReZ at all, such as a "Facebook hack", tasers or a Netflix gift card.          
+        possibly be created. For your discovery, we have included a view of the offers within these categories.
     """)
 
     st.write(
         df_drugs[df_drugs['category_level_2'].isin(['Weight Loss', 'Prescriptions Drugs', 'Steroids'])].reset_index(
-            drop=True).head(10))
-    st.write(df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True).head(10))
+            drop=True)[['vendor', 'category_level_2', 'product', 'price in $', 'shipping_from', 'shipping_to']])
 
-    st.markdown("""
-        As shown above, 
+    st.markdown("""        
+        Furthermore, the accessories category does not have subcategories as well. However, with only 10 offers this 
+        would not benefit anyone. Additionally, several listings should not have been placed in the _Drugs & Chemicals_
+        main category of ToRReZ at all, such as a "Facebook hack", tasers or a Netflix gift card. Also, for just $3.99 
+        you can buy the knowledge on how to get free Amazon gift card!          
     """)
 
-    # Highlight some notable users, pivot the same table. Size = average price (say vendor, category, category 3 as index, indiv offers as data).
-    # Helps answer whether specialists are more expensive or not, or diversification:
-
-    # Also add tool that allows for individual users to be plotted
+    st.write(
+        df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True)[
+            ['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $', 'shipping_from', 'shipping_to']])
 
     st.write("___")
-
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
     # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
@@ -888,8 +882,9 @@ elif chapter == '4. Advanced Insights':
         country_of_origin = df_vendors[df_vendors['vendor'] == seller]
 
     level_3_order = [
-        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
-        'GBL', 'Ketamine', # Dissociatives
+        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping',
+        # Cannabis & Hash
+        'GBL', 'Ketamine',  # Dissociatives
         'GBL', 'Ketamine',  # Dissociatives
         'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
