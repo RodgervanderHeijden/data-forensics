@@ -1,0 +1,5 @@
+The code crawls and scrapes information of the dark web market Torrez.
+First all nessecary packages are imported. Then connection to TOR and the Torrez market is realised. 
+Subsequently the crawler is written that collects all URLs of the pages and goes through them all of 
+them by a for loop. For all pages the relevant information is scraped using the package BeatifulSoup. 
+Finally, all information is combined and coverted to tabular and CSV format ready for analysis.
