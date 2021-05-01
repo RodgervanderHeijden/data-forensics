@@ -21,7 +21,7 @@ def get_all_data():
     drugs['price'] = [round(float(x)) if len(x) <= 6 else float(x[:-3].replace(",", "")) for x in drugs['price in $']]
     # to do: add country of origin to the vendor dataset. Can be extracted from drugs dataset.
     # vendor can have multiple shipping from locations --> unable to trace exact country of origin
-    vendors = pd.read_csv(r'DataForensics\Vendor_dataset_new.csv')
+    vendors = pd.read_csv(r'.\Vendor_dataset_new.csv')
     vendors.drop(vendors.columns[0], axis=1, inplace=True)
     return drugs, vendors
 
@@ -597,6 +597,7 @@ elif chapter == '4. Advanced Insights':
         (vendor_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=15,
+        ).configure_axisX(
             labelAngle=-30,
         ).configure_title(
             fontSize=24
@@ -711,9 +712,8 @@ elif chapter == '4. Advanced Insights':
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=15,
+        ).configure_axisX(
             labelAngle=-30,
-        ).configure_axisY(
-            labelAngle=0,
         ).configure_title(
             fontSize=24
         ).properties(
@@ -854,9 +854,8 @@ elif chapter == '4. Advanced Insights':
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
+        ).configure_axisX(
             labelAngle=-30,
-        ).configure_axisY(
-            labelAngle=0,
         ).configure_title(
             fontSize=32
         ).properties(
@@ -913,10 +912,8 @@ elif chapter == '4. Advanced Insights':
         (vendors_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
-            labelAngle=-30,
-        ).configure_axisY(
-            labelAngle=0,
         ).configure_axisX(
+            labelAngle=-30,
             labelFontSize=12,
         ).configure_title(
             fontSize=32
@@ -926,10 +923,8 @@ elif chapter == '4. Advanced Insights':
     )
 
     strip = alt.Chart(df_drugs).mark_tick().encode(
-        x= #alt.X('jitter:Q',
-
-            'shipping_from', # prices also works well
-        y='category_level_2',
+        x=alt.X('shipping_from', title='Shipping from'),
+        y=alt.Y('category_level_2', title='Category (level 2)'),
         color='shipping_from',
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
@@ -938,8 +933,22 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
-    st.altair_chart(strip)
+    st.altair_chart(strip.configure_axisX(
+            labelAngle=-30,
+        ).configure_axis(
+            labelFontSize=12,
+            titleFontSize=20,
+        ).configure_title(
+            fontSize=32
+        ).properties(
+            title='Does country x sell drug y?'
+            #height=1000, width=700, title="Mean product price"
+        ))
 
+
+    st.write("Findings: ")
+
+    st.write("1. Tobacco originates fro mSpain and Germany, several countries sell just one drug.")
 
 
     shipping_from_countries = list(df_drugs.shipping_from.unique())
@@ -952,8 +961,8 @@ elif chapter == '4. Advanced Insights':
     df_under_50 = df_drugs[df_drugs['price'] <= 10000]
     df_country = df_under_50[df_under_50['shipping_from'].isin(select_country)] # 1000/len(select_country)
 
-
-    stripplot_by_category =  alt.Chart(df_country, width=120).mark_point().encode(
+    df_category = df_country[~df_country['category_level_2'].isin(['Accessories', 'Weight Loss', 'Tobacco'])]
+    stripplot_by_category =  alt.Chart(df_category, width=120).mark_point().encode(
         x=alt.X(
             'jitter:Q',
             title=None,
@@ -978,7 +987,7 @@ elif chapter == '4. Advanced Insights':
                 labelOrient='bottom',
                 labelAlign='center',
                 labelPadding=350,
-                labelFontSize=16,
+                labelFontSize=20,
                 labelColor='white'
             ),
         ),
@@ -989,11 +998,11 @@ elif chapter == '4. Advanced Insights':
         spacing=0
     ).configure_view(
         stroke=None
-    )
+    ).interactive()
     st.altair_chart(stripplot_by_category, use_container_width=False)
 
 
-    stripplot_by_country = alt.Chart(df_country, width=min(1440/len(select_country), 200)).mark_point().encode(
+    stripplot_by_country = alt.Chart(df_country, width=min(1200/len(select_country), 250)).mark_point().encode(
         x=alt.X(
             'jitter:Q',
             title=None,
@@ -1042,11 +1051,10 @@ elif chapter == '4. Advanced Insights':
 
     st.altair_chart(stripplot_by_country, use_container_width=False)
 
+    shipping_to_value_counts = df_country['shipping_to'].value_counts()
+    countries_with_50_min = shipping_to_value_counts[shipping_to_value_counts > 50].index
 
-
-
-
-    stripplot_by_receiving_country = alt.Chart(df_country, width=1440/len(df_country['shipping_to'].unique())).mark_point().encode(
+    stripplot_by_receiving_country = alt.Chart(df_country[df_country['shipping_to'].isin(countries_with_50_min)], width=1200/len(countries_with_50_min)).mark_point().encode(
         x=alt.X(
             'jitter:Q',
             title=None,
@@ -1071,8 +1079,9 @@ elif chapter == '4. Advanced Insights':
                 titleOrient='top',
                 labelOrient='bottom',
                 labelAnchor='middle',
-                labelAlign='right',
+                labelAlign='center',
                 labelPadding=350,
+                labelFontSize=20,
             ),
         ),
       ).transform_calculate(
@@ -1214,6 +1223,7 @@ elif chapter == '4. Advanced Insights':
         (vendor_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=15,
+        ).configure_axisX(
             labelAngle=-30,
         ).configure_title(
             fontSize=24
