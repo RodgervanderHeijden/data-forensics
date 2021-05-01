@@ -54,21 +54,6 @@ def country_multiselect():
     return st_country_select
 
 
-@st.cache(allow_output_mutation=True)
-def fifth_block(df_drugs):
-    freq = df_drugs['highest_category'].value_counts()
-    # Select frequent values. Value is in the index.
-    frequent_values = freq[freq >= 100].index
-    # Return only rows with value frequency above threshold.
-    df_3 = df_drugs[df_drugs['highest_category'].isin(frequent_values)]
-
-    fig1 = px.strip(df_3, x="price", y="highest_category", color="highest_category")
-    fig2 = px.strip(
-        df_3.groupby('highest_category').mean().reset_index().sort_values(by='price', ascending=False),
-        x="price", y="highest_category", color="highest_category")
-    return fig1, fig2
-
-
 # SIDEBAR
 with st.sidebar:
     st.header("A dashboard for Data Forensics")
@@ -263,7 +248,7 @@ if chapter == "2. Product Insights":
         df_origin.loc[df_origin[
                           'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
         fig3 = px.pie(df_origin, values='shipping_from', names='country',
-                      title='Shipping from (having at least 100 offers):')
+                      title='Shipping from (having at least 100 offers):', hole=.4)
 
         fig7 = go.Figure()
         df_destination = pd.DataFrame(df_drugs.shipping_to.value_counts())
@@ -273,7 +258,7 @@ if chapter == "2. Product Insights":
             df_destination[
                 'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
         fig7 = px.pie(df_destination, values='shipping_from', names='country',
-                      title='Shipping to (having at least 100 offers):')
+                      title='Shipping to (having at least 100 offers):', hole=.4)
 
         fig3.update_layout(autosize=False,
                            width=750,
@@ -310,74 +295,136 @@ if chapter == "2. Product Insights":
 
     st.write("___")
     st.header("Drug pricing")
+    st.write(
+        "Not all drugs are the same: the workings of LSD differ significantly from the workings of cocaine or weed. We "
+        "wondered whether we could find some information in the prices that the offers note. The following quartet of "
+        "graphs showcases this. The first pair of graphs contains the visualization that covers *all data* with the "
+        "country selected above, while the second row covers only categories with *at least 100 offers*. The graphs are"
+        " as interactive as possible, with information on hover, but also the ability to (de)select categories from the"
+        " legend by clicking. As the legends have been ordered alphabetically, the colors and ordering of every level "
+        "two category is the same on each pair. The ordering of the level 3 categories - the categories on the y-axis -"
+        " are based on the highest average value of offers within that category. "
+    )
+
+    st.write(
+        "What we can deduce from the first pair of plots is that the costs vary wildly. We see some average prices that"
+        " exceed $3000, while the tail end has 9 categories with an average offer below $200. The left graph shows that"
+        " some outliers are present, such as an offer for close to $400k in the Speed category and two around the $200k"
+        " range for Speed and Heroin. Despite these very high peaks (which unfortunately also partially obfuscate the "
+        "results for the other categories) the categories of Speed and Heroin are not even the top 5 most expensive "
+        "ones. We also noticed that the subcategory does have a significant effect on the (average) price of the "
+        "listing, so we pose that this is quite important for vendors."
+    )
+
+    st.write(
+        "Though clicking on categories in the legend allows for (de)selection in the graph, we wanted to look "
+        "into the categories a bit more, and decided to only include categories with at least 100 offers for the next "
+        "two graphs. "
+    )
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
-
         lvl_2_cats = ['Accessories', 'Benzos', 'Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates',
                       'Prescriptions Drugs', 'Psychedelics', 'Steroids', 'Stimulants', 'Weight Loss', 'Tobacco', ]
-        order_list = ['Dissociatives', 'RC', 'GBL', 'Powder', 'Benzos', 'Speed', 'Meth', 'Ecstasy',
-                      'Drugs and Chemicals', 'Heroin', 'Cocaine', 'Oxycodone', 'Ketamine', '2C-B', 'Opiates', 'MDMA',
-                      'Vaping', 'Cannabis & Hash', 'Stimulants', 'Synthetic', 'LSD', 'Buds & Flowers', 'Vyvanse',
-                      '5-MeO-DMT', 'Pills', 'Mushrooms', 'Hash', 'Adderal', '4-FA', 'Crack', 'Shake', 'DMT', 'GHB',
-                      'Mescaline', 'Topical', 'Codeine', 'Psychedelics', 'Buprenorphine', 'Prescriptions Drugs',
-                      'Steroids', 'Tobacco', 'Edibles', 'TMA', 'Seeds', 'Weight Loss', 'DOM', 'Accessories', 'DOC',
-                      'Prerolls', 'MXE']
-        plot_order = {'category_level_3': order_list,
-                      'highest_category': order_list,
+        # order_list = ['Dissociatives', 'RC', 'GBL', 'Powder', 'Benzos', 'Speed', 'Meth', 'Ecstasy',
+        #               'Heroin', 'Cocaine', 'Oxycodone', 'Ketamine', '2C-B', 'Opiates', 'MDMA',
+        #               'Vaping', 'Cannabis & Hash', 'Stimulants', 'Synthetic', 'LSD', 'Buds & Flowers', 'Vyvanse',
+        #               'Pills', 'Mushrooms', 'Hash', 'Adderal', '4-FA', 'Crack', 'Shake', 'DMT', 'GHB',
+        #               'Mescaline', 'Topical', 'Codeine', 'Psychedelics', 'Buprenorphine', 'Prescriptions Drugs',
+        #               'Steroids', 'Tobacco', 'Edibles', 'Seeds', 'Weight Loss', 'Accessories',
+        #               'Prerolls',] #based on price of average offer
+        order_list = ['Dissociatives', 'GBL', 'Ketamine', 'GHB', 'RC', 'Powder', 'Benzos', 'Pills', 'Heroin',
+                      'Oxycodone', 'Opiates', 'Codeine', 'Buprenorphine', 'Speed', 'Meth', 'Cocaine', 'Stimulants',
+                      'Vyvanse', 'Adderal', '4-FA', 'Crack', 'Ecstasy', 'MDMA', '2C-B', 'LSD', 'Mushrooms', 'DMT',
+                      'Mescaline', 'Psychedelics', 'Vaping', 'Cannabis & Hash', 'Synthetic', 'Buds & Flowers', 'Hash',
+                      'Shake', 'Topical', 'Edibles', 'Seeds', 'Prerolls', 'Prescriptions Drugs', 'Steroids', 'Tobacco',
+                      'Weight Loss', 'Accessories']
+        frequent_values = df_drugs['highest_category'].unique()
+        order_list_country_specific = [category for category in order_list if category in frequent_values]
+        plot_order = {'category_level_3': order_list_country_specific,
+                      'highest_category': order_list_country_specific,
                       'category_level_2': lvl_2_cats}
-        df_plot_data = df_drugs[df_drugs['category_level_3'].isin(order_list)]
-        df_plot_data.dropna(subset=['highest_category', 'price'], how='any', inplace=True)
+        df_plot_data = df_drugs[df_drugs['highest_category'].isin(order_list)]
+
+        df_plot_data.dropna(subset=['highest_category', 'price', 'category_level_2'], how='any', inplace=True, axis=0)
         df_data_ordered_by_price = df_plot_data.groupby(
             ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
             by='price', ascending=False)
 
-        category_prices.subheader("Drug prices for all categories for the selected location(s)")
+        category_prices.subheader("Drug prices for all categories")
         fig_category_prices = px.strip(df_plot_data,
                                        x="price",
                                        y="highest_category",
                                        color="category_level_2",
                                        category_orders=plot_order,
                                        )
-        fig_category_prices.update_layout(width=800, height=1200)
+        fig_category_prices.update_layout(height=800)
         category_prices.plotly_chart(fig_category_prices, use_container_width=True)
 
-        category_avg_prices.subheader("Average prices for each category for the selected location(s)")
+        category_avg_prices.subheader("Average prices for each category")
         fig_category_avg_prices = px.strip(df_data_ordered_by_price,
                                            x="price",
                                            y="highest_category",
                                            color="category_level_2",
-                                           category_orders=plot_order)
-        fig_category_avg_prices.update_layout(width=800, height=1200)
+                                           category_orders=plot_order,
+                                           )
+        fig_category_avg_prices.update_layout(height=800)
         category_avg_prices.plotly_chart(fig_category_avg_prices, use_container_width=True)
 
     col4, col6 = st.beta_columns(2)
     with col4, col6:
-        fig1, fig2 = fifth_block(df_drugs)
-        col4.subheader(f"Drug prices for categories with at least 100 offers for the selected location(s)")
+        freq = df_plot_data['highest_category'].value_counts()
+        # Select frequent values. Value is in the index.
+        frequent_values = freq[freq >= 100].index
+        # Return only rows with value frequency above threshold.
+        df_temp = df_plot_data[df_plot_data['highest_category'].isin(frequent_values)]
+        df_temp_avg = df_temp.groupby(
+            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
+            by='price', ascending=True)
+        order_list_country_specific = [category for category in order_list if category in frequent_values]
+        plot_order_country_specific = {'category_level_3': order_list_country_specific,
+                                       'highest_category': order_list_country_specific,
+                                       'category_level_2': lvl_2_cats}
+        fig1 = px.strip(df_temp,
+                        x="price",
+                        y="highest_category",
+                        color="category_level_2",
+                        category_orders=plot_order_country_specific,
+                        )
+        fig2 = px.strip(df_temp_avg,
+                        x="price",
+                        y="highest_category",
+                        color="category_level_2",
+                        category_orders=plot_order_country_specific,
+                        )
+        fig1.update_layout(height=800)
+        col4.subheader("Drug prices for categories with at least 100 offers")
         col4.plotly_chart(fig1, use_container_width=True)
-        col6.subheader(f"Average prices for each category with at least 100 offers for the selected location(s)")
+        fig2.update_layout(height=800)
+        col6.subheader("Average prices for each category with at least 100 offers")
         col6.plotly_chart(fig2, use_container_width=True)
 
-
-
-# # Add number of offers to vendor df
-# nr_offers = pd.DataFrame(df_drugs.groupby('vendor').vendor.count())
-# nr_offers.columns = ['nr_offers']
-# nr_offers.reset_index(inplace=True)
-# df_vendors = df_vendors.merge(nr_offers, on='vendor', how='left')
-
-# count rank
-ranks = pd.DataFrame(df_vendors['rank'].value_counts())
-ranks.reset_index(inplace=True)
-ranks.columns = ['rank', 'count']
-
-# verification rank
-verification = pd.DataFrame(df_vendors['verification'].value_counts())
-verification.reset_index(inplace=True)
-verification.columns = ['verification', 'count']
+    st.write(
+        "When looking at the data for the selected country or countries and then taking only the (sub)categories with "
+        "at least 100 offers, we see that some categories fall off. Accessories, Weight Loss and Tobacco all have fewer"
+        " than 100 offers worldwide. As for the subcategories, several drop off. For instance, the only dissociative "
+        "that is left is _ketamine_. Of the 5 subcategories with an average price above $3000, only two remain: _RC_ "
+        "(_research chemical_). Curiously, this is both in the _benzos_ and _opiates_ main categories. Though a more "
+        "in-depth research should be conducted to draw hard conclusions, with over 100 offers we can see clear "
+        "differences, which we thought was quite interesting. "
+    )
 
 if chapter == "3. Vendor Insights":
+    # count rank
+    ranks = pd.DataFrame(df_vendors['rank'].value_counts())
+    ranks.reset_index(inplace=True)
+    ranks.columns = ['rank', 'count']
+
+    # verification rank
+    verification = pd.DataFrame(df_vendors['verification'].value_counts())
+    verification.reset_index(inplace=True)
+    verification.columns = ['verification', 'count']
+
     st.header("Vendor insights")
     st.subheader("Total number of vendors over time")
     st.write("ToRReZ launched in February 2020 and has become very popular. After a modest start we observe a "
@@ -710,8 +757,6 @@ elif chapter == '4. Advanced Insights':
     level_3_order = [
         'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping', # Cannabis & Hash
         'GBL', 'Ketamine', # Dissociatives
-        'GBL', 'Ketamine',  # Dissociatives
-        'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
         'Powder',  # Benzos
         'Codeine', 'Heroin', 'Oxycodone', 'RC',  # Opiates
