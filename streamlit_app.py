@@ -103,13 +103,16 @@ if chapter == "0. Preface":
 
         Insights derived from the retrieved data were diligently analysed, with the key takeaways shared in the 
         dashboard in front of you. The side panel on the left contains a table of contents, which allows for navigation.
-        The first pages contain a guided read with interesting insights extracted and highlighted by us. The latter 
-        pages act as a sandbox for the reader to investigate; interactivity is incorporated as much as 
-        possible and strongly encouraged. On some pages additional controls are provided; generally they are in the left
-        sidebar panel.   
+        The first pages contain a more introductory approach to the data with insights of descriptive nature. The last
+        one specifically goes into some hypotheses we defined in advance and were able to answer over the past weeks. 
+        During this research several (related) insights where also found, which we highlight there as well. 
+        
+        Where possible (and where logical) we have included the option for interactivity, which presents itself in the 
+        ability to hover of data, zoom, pan and select subsets. We strongly encourage the reader to use the sandbox to 
+        their own liking; we merely provide the tools that allow you to discover additional insights. 
 
-        In case any question remains, or we missed some valuable insights, please do contact us. Wishing you the best 
-        reading experience possible, 
+        In case any question remains, some confusion arises or additional information is desired, please do contact us. 
+        Wishing you the best reading experience possible, 
 
         Thaibinh Luu and Rodger van der Heijden
         """)
@@ -123,11 +126,11 @@ if chapter == "0. Preface":
 # CHAPTER 1
 if chapter == "1. Data Description":
     st.header("Architecture overview")
-    st.write("""To obtain data of the Torrez market we had to visit the dark web. To achieve this, the following 
+    st.write("""To obtain data of the ToRReZ market we had to visit the dark web. To achieve this, the following 
                 environment is implemented. First, a virtual machine is downloaded to create a safe place to 
                 experiment in. To add another layer of protection, we connected to a VPN within the virtual machine. 
                 Finally, we downloaded the Tor browser which allowed us to visit the dark web 
-                and Torrez. 
+                and ToRReZ. 
              """)
     col_left, col_right = st.beta_columns((3, 1))
     with col_left, col_right:
@@ -162,7 +165,7 @@ if chapter == "1. Data Description":
     st.write("""
     Crawling and scraping eventually led to a dataset that can be used for analysis. 
     We ended up with two different datasets, one that contains the product information and one that contains 
-    the vendor information. We wanted specific insights on the Torrez market and hence only this market is scraped. 
+    the vendor information. We wanted specific insights on the ToRReZ market and hence only this market is scraped. 
     The type of data scraped is textual data. Images were not scraped as they were not useful for the analysis we intended to do. 
     Below you can find the data description; the variable name, the data type and the explanation.
     """)
@@ -182,7 +185,7 @@ if chapter == "1. Data Description":
             Have a look at the raw data that we scraped. Two datasets are provided, the product dataset and the vendor dataset.
             """)
     st.subheader("Product data")
-    st.write(""" At the moment of scraping 14.013 offers were posted on Torrez in the Drugs and Chemicals-category. We 
+    st.write(""" At the moment of scraping 14.013 offers were posted on ToRReZ in the Drugs and Chemicals-category. We 
     scraped all of those; below you can find an overview of the raw data. If desired, you can (de)select columns, you can pick 
     how many observations are shown and/or you can order any column by clicking on the column name.""")
     st_ms = st.multiselect("Select which columns you want to display.", df_drugs.columns.tolist(),
@@ -191,7 +194,7 @@ if chapter == "1. Data Description":
     st.dataframe(df_drugs[st_ms].head(st_slider))
 
     st.subheader("Vendor data")
-    st.write(""" At the moment of scraping 668 vendors had active offers on Torrez in the Drugs and Chemicals-category. We 
+    st.write(""" At the moment of scraping 668 vendors had active offers on ToRReZ in the Drugs and Chemicals-category. We 
     scraped their profiles; below you can find an overview of the data. Again, if desired, you can (de)select columns, you 
     can pick how many observations are shown and/or you can order any column by clicking on the column name.""")
     st_ms_vendor = st.multiselect("Select which columns you want to display.", df_vendors.columns.tolist(),
@@ -204,7 +207,7 @@ if chapter == "2. Product Insights":
     st.header("Product insights")
     st.subheader("Shipping locations")
     st.write(
-        'The distribution of the shipping from & shipping to locations of all drug and chemical related products on Torrez. '
+        'The distribution of the shipping from & shipping to locations of all drug and chemical related products on ToRReZ. '
         'The majority of products is shipped from either the UK, US, Germany or the Netherlands and almost half of all products can be shipped worldwide.')
     country_multiselect()
     df_drugs, df_vendors = return_specified_data(st_country_select)
@@ -301,7 +304,7 @@ verification.columns = ['verification', 'count']
 if chapter == "3. Vendor Insights":
     st.header("Vendor insights")
     st.subheader("Total number of vendors over time")
-    st.write("Torrez launched in February 2020 and has become very popular. After a modest start we observe a "
+    st.write("ToRReZ launched in February 2020 and has become very popular. After a modest start we observe a "
              "rapid increase in the number of vendors with at least one listing in the category 'Drugs & Chemicals'. ")
 
     df_vendors['date'] = pd.to_datetime(df_vendors['since'])
@@ -350,10 +353,10 @@ if chapter == "3. Vendor Insights":
         col_vendor_2.plotly_chart(fig21, use_container_width=True)
 
     st.subheader("Verification level")
-    st.write("Every vendor on Torrez that has a positive history from other markets can get a verification badge. "
+    st.write("Every vendor on ToRReZ that has a positive history from other markets can get a verification badge. "
              "The level indicates the number of other markets the vendor is active on. Level 1 means that the vendor is "
              "active on one other market, level 2 indicates activity on two other markets etc. The majority of the vendors "
-             "is only active on Torrez.")
+             "is only active on ToRReZ.")
 
     verification_order = ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4",
                           "Level 5", "Level 6", "Level 7", "Level 8",
@@ -479,7 +482,7 @@ if chapter == "3. Vendor Insights":
 elif chapter == '4. Advanced Insights':
     st.header("Advanced insights")
     st.write("In the previous sections we have provided some general but interesting insights regarding the product "
-             "offerings and vendors on Torrez. In this section we will go a step further and analyse the market in "
+             "offerings and vendors on ToRReZ. In this section we will go a step further and analyse the market in "
              "more detail. We are specifically interested in relationships that enable us to better grasp the dynamics "
              "and interactions within this market. This allows us to better understand the drug flow on the dark web."
              "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the effect of "
@@ -494,7 +497,7 @@ elif chapter == '4. Advanced Insights':
         "effects, and one could imagine that expertise in one category would not necessarily translate into knowledge "
         "of the other. We set out to investigate that. ")
 
-    st.write("Torrez works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
+    st.write("ToRReZ works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
              "can decide not to further specify their offers. Our dataset is specifically selected within the first level, "
              "'Drugs & Chemicals'. The chart beneath showcases the spread of the second level categories. "
              " We have selected the 50 vendors with the highest amount of active offers at the time of the scraping,"
@@ -610,7 +613,7 @@ elif chapter == '4. Advanced Insights':
              "multiple subcategories, we changed the color coding to match a block of the main category. Thus, the first "
              "color (blue) refers to the main category _Cannabis & Hash_, and this category starts at _Buds & Flowers_ "
              "and extends to _Vaping_. Subcategories were sorted alphebetically, while the main categories retain their "
-             "order of the graph above. Notably, one exception is in place: _benzos_ (red). Torrez uses the subcategory "
+             "order of the graph above. Notably, one exception is in place: _benzos_ (red). ToRReZ uses the subcategory "
              "_pills_ for _Ecstacy_ as well, and thus these are plotted together. The color coding is correct, for a "
              "more convenient interpretation the other _benzos_ category is plotted next to the _pills_. ")
     st.write("")
@@ -713,13 +716,13 @@ elif chapter == '4. Advanced Insights':
         ### 4. _Prescription drugs_, _Steroids_ and _Weight Loss_ drugs do not have subcategories
  
         With a total of 1158 offers within these categories, one could propose that further specification is in place. 
-        Torrez however does not allow any subcategories within these categories. Scrolling through the offers here show
+        ToRReZ however does not allow any subcategories within these categories. Scrolling through the offers here show
         a wide variety of drugs in each one, though we're unaware whether a proper (categorical) distinction could 
         possibly be created. 
         
         Furthermore, the accessories category does not have subcategories as well. However, with only 10 offers this 
         would not benefit anyone. Additionally, several listings should not have been placed in the _Drugs & Chemicals_
-        main category of Torrez at all, such as a "Facebook hack", tasers or a Netflix gift card.          
+        main category of ToRReZ at all, such as a "Facebook hack", tasers or a Netflix gift card.          
     """)
 
     st.write(
@@ -1060,32 +1063,34 @@ elif chapter == '4. Advanced Insights':
     st.altair_chart(stripplot_by_receiving_country, use_container_width=False)
 
     st.write("___")
-    st.header("2. To what extent does trust play a role on Torrez?")
+    st.header("2. To what extent does trust play a role on ToRReZ?")
     st.write(
-        "We assume that trust plays a key role in any transaction. Especially on the dark web where vendors are anonymous. "
-        "Torrez awards vendors several labels that inidcate their experience and trustworthiness: the rank and the verificaiton level. "
-        "The rank indicates the experience of the vendor in terms of number of sales on Torrez. "
-        "The verification level indicates the vendors activity on other markets. The higher the level, the more other markets the vendor is also active on. "
-        "We were wondering if these labels could lead to a difference in consumer behavior. ")
+        "We assume that trust plays a key role in any transaction. Especially on the dark web where vendors are "
+        "anonymous. ToRReZ awards vendors several labels that inidcate their experience and trustworthiness: the rank "
+        "and the verification level. The rank indicates the experience of the vendor in terms of number of sales on "
+        "ToRReZ. The verification level indicates the vendors activity on other markets. The higher the level, the more "
+        "other markets the vendor is also active on. We were wondering if these labels could lead to a difference in "
+        "consumer behavior. "
+    )
 
     st.subheader("Do vendors with a higher verification level have more sales?")
-    st.write("Verification level, to a certain extent, indicates the trustworthiness of the vendors. Vendors that have "
-             "a positive history from other markets (and can prove that!) can get a higher verification level."
-             "So, the higher the level, the more other markets the vendor is active on (with good reputations). "
-             "We were interested to find out if the verification level is actually a factor in the number of sales a vendor has. "
-             "Some vendors have been active on Torrez for a longer period than others. Therfore, to make a fair comparison we "
-             "will look at the number of transactions per month for each vendor.")
+    st.write(
+        "Verification level, to a certain extent, indicates the trustworthiness of the vendors. Vendors that have a "
+        "positive history from other markets (and can prove that!) can get a higher verification level. So, the higher "
+        "the level, the more other markets the vendor is active on (with good reputations). We were interested to find "
+        "out if the verification level is actually a factor in the number of sales a vendor has. Some vendors have been"
+        " active on ToRReZ for a longer period than others. Therfore, to make a fair comparison we will look at the "
+        "number of transactions per month for each vendor."
+    )
 
     df_vendors['date'] = pd.to_datetime(df_vendors['since'])
     now = pd.to_datetime('Apr 18, 2021')
     df_vendors['num_months'] = (now.year - df_vendors.date.dt.year) * 12 + (now.month - df_vendors.date.dt.month)
     df_vendors['transactions_month'] = df_vendors['transactions'] / df_vendors['num_months']
 
-    verification_order = ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4",
-                          "Level 5", "Level 6", "Level 7", "Level 8",
-                          'Level 9', 'Level 10', 'Level 11', 'Level 12',
-                          'Level 13', 'Level 14', 'Level 15', 'Level 16',
-                          'Level 19']
+    verification_order = ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7",
+                          "Level 8", 'Level 9', 'Level 10', 'Level 11', 'Level 12', 'Level 13', 'Level 14', 'Level 15',
+                          'Level 16', 'Level 19']
 
     df_vendors['verification'] = df_vendors.verification.str.replace('Verification ', "").str.replace(
         "No verification level", "Level 0")
@@ -1214,7 +1219,7 @@ elif chapter == '4. Advanced Insights':
     # st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Do vendors with positive feedback have more transactions?")
-    st.write("Torrez provides the consumers the possibility to give feedback on their experience with vendors. "
+    st.write("ToRReZ provides the consumers the possibility to give feedback on their experience with vendors. "
              "The percentage of positive feedback is a great indicator of the trustworthiness of the vendor and its products."
              " We were wondering if these two variables have a clearer relationship. To get a fair ...")
 
