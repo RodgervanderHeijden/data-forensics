@@ -1,10 +1,9 @@
-import streamlit as st
+import altair as alt
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
-import pycountry
-import altair as alt
+import streamlit as st
 from PIL import Image
 
 # BASE SETUP
@@ -577,32 +576,34 @@ if chapter == "3. Vendor Insights":
 # CHAPTER 4
 elif chapter == '4. Advanced Insights':
     st.header("Advanced insights")
-    st.write("In the previous sections we have provided some general but interesting insights regarding the product "
-             "offerings and vendors on ToRReZ. In this section we will go a step further and analyse the market in "
-             "more detail. We are specifically interested in relationships that enable us to better grasp the dynamics "
-             "and interactions within this market. This allows us to better understand the drug flow on the dark web. "
-             "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the "
-             "effect of trust on the sales in this market.")
+    st.write("""
+        In the previous sections we have provided some interesting descriptive insights regarding the product offerings 
+        (page 2) and vendors (page 3) on ToRReZ. In this section we will go a step further and analyse the market in 
+        more detail. We have defined two main areas of interest: the supply side (_"Can we deduce relationships between 
+        drug offerings, drug prices, top vendors, countries of origin and shipping destinations?"_) and the 
+        vendor side (_"To what extent does trust play a role on ToRReZ in drug offerings, drug prices and drug sales?"_)
+        """)
 
     st.write("___")
-    st.header("1. Do vendors select one specialty within drugs or do they sell a wide range of drugs?")
+    st.header("1. Can we deduce relationships between drug offerings, drug prices, top vendors, countries of origin and"
+              " shipping destinations?")
     st.write(
         "We wondered whether the vendors on the dark web are well-versed in the entire criminal circuit or might just "
         "have a connection with one kind of drugs and are experts in that. Additionally, it would be possible that "
         "several drugs are often sold in conjunction. For instance, cocaine and psychedelics have vastly different "
         "effects, and one could imagine that expertise in one category would not necessarily translate into knowledge "
-        "of the other. We set out to investigate that. ")
+        "of the other.")
 
     st.write("ToRReZ works with a hierarchy that can be selected by the vendor. However, this is optional, and vendors "
              "can decide not to further specify their offers. Our dataset is specifically selected within the first "
              "level, 'Drugs & Chemicals'. The chart beneath showcases the spread of the second level categories. We "
-             "have selected the 50 vendors with the highest amount of active offers at the time of the scraping, as "
-             "that would give us the most insight. The results in a cut-off of 63 offers. The categories are sorted on "
-             "the quantity of the offers (descending), similarly, the vendors are sorted as well (descending). The size"
-             " of the dots refers to the amount of offers for that specific category and vendor combination; specific "
-             "numbers are visible in the tooltip when hovering. The color is based on the same metric, with more blue "
-             "matching to more offers. As not all offers had a specified category assigned, we assigned those offers an"
-             " 'Not provided' label, plotted them on the bottom and colored them gray.")
+             "have selected the 50 vendors with the highest amount of active offers at the time of the scraping. This "
+             "results in a cut-off of 63 offers. The categories are sorted on the quantity of the offers (descending), "
+             "similarly, the vendors are sorted as well (descending). The size of the markers refers to the amount of "
+             "offers for that specific category and vendor combination; specific numbers are visible in the tooltip "
+             "when hovering. The color is based on the same metric, with more blue indicating more offers. As not all "
+             "offers had a specified category assigned, we assigned those offers an 'Not provided' label, plotted them "
+             "on the bottom and colored them gray.")
 
     st.write(
         "The resulting figure, as shown below, is very information dense. We will cover some interesting insights, "
@@ -611,7 +612,7 @@ elif chapter == '4. Advanced Insights':
 
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
-    # Show the top 10 highest # of offers and take the index (the account names) to convert that to a list for further selection
+    # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
     top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.tolist()
     top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
     top_vendors_offers.fillna("Not provided", inplace=True)
@@ -622,10 +623,15 @@ elif chapter == '4. Advanced Insights':
     df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
     df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
 
+    # Used to color code in order
     level_2_order = ['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
                      'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
-                     'Accessories', 'Not provided']
+                     'Accessories', 'Tobacco', 'Not provided']
 
+    # Altair - the library used for the next 5 plots - uses a quite descriptive API
+    # On first look it's very puzzling, with every single aspect explicitly defined
+    # More barebones graphs are very possible, but as we had limited room to work with
+    # we decided to incorporate multiple insights into each graph.
     vendor_top = alt.Chart(df_rest_2).mark_circle().encode(
         alt.Y('category_level_2:O', sort=level_2_order, title='Categories'),
         alt.X('vendor:N', sort=top_vendors, title='Vendors'),
@@ -638,6 +644,7 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
+    # We create a new chart for the missing data ("Not provided"), which we later stack.
     vendor_top_missing = alt.Chart(
         df_not_provided_2
     ).mark_circle(
@@ -653,6 +660,7 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
+    # Here we stack the two charts and configure the axes
     st.altair_chart(
         (vendor_top + vendor_top_missing).configure_axis(
             labelFontSize=12,
@@ -712,13 +720,6 @@ elif chapter == '4. Advanced Insights':
              "_pills_ for _Ecstacy_ as well, and thus these are plotted together. The color coding is correct, for a "
              "more convenient interpretation the other _benzos_ category is plotted next to the _pills_. ")
     st.write("")
-
-    # Quite a chained operation, so explanation:
-    # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
-    # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
-    top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.tolist()
-    top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
-    top_vendors_offers.fillna("Not provided", inplace=True)
 
     # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
     df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_3', 'category_level_2']).count().reset_index()[
@@ -881,13 +882,6 @@ elif chapter == '4. Advanced Insights':
     """)
     # Not required but used for a bit of padding
     st.write("")
-    st.write("")
-    # Quite a chained operation, so explanation:
-    # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
-    # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
-    top_vendors = df_drugs.groupby("vendor").count().sort_values('product', ascending=False).head(50).index.tolist()
-    top_vendors_offers = df_drugs[df_drugs['vendor'].isin(top_vendors)]
-    top_vendors_offers.fillna("Not provided", inplace=True)
 
     # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
     plot_df = top_vendors_offers.groupby(['vendor', 'category_level_2', 'shipping_from']).agg(
@@ -896,23 +890,11 @@ elif chapter == '4. Advanced Insights':
     plot_df['Mean product price'].astype(int)
     plot_df.reset_index(inplace=True)
 
-    # df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_3', 'category_level_2']).count().reset_index()[['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $']]
     df_not_provided = plot_df[plot_df['shipping_from'] == 'Not provided']
     df_rest = plot_df[~plot_df.isin(df_not_provided)].dropna(axis=0)
 
     for seller in df_rest['vendor']:
         country_of_origin = df_vendors[df_vendors['vendor'] == seller]
-
-    level_3_order = [
-        'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping',
-        # Cannabis & Hash
-        'GBL', 'Ketamine',  # Dissociatives
-        'MDMA', 'Pills',  # Ecstacy
-        'Powder',  # Benzos
-        'Codeine', 'Heroin', 'Oxycodone', 'RC',  # Opiates
-        '4-FA', 'Adderal', 'Crack', 'Cocaine', 'Meth', 'Speed', 'TMA',  # Stimulants
-        '2C-B', '5-MeO-DMT', 'DMT', 'LSD', 'Mescaline', 'Mushrooms',  # Psychedelics
-        'Not provided']
 
     top_vendors_country_order = [
         'RoyalMailer', 'PitStopUK', 'Everylittlehalps', 'LucySkyDiamonds', 'DrSeuss', 'kandykones',
@@ -973,69 +955,70 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
-    col2, col4 = st.beta_columns(2)
-    col2.altair_chart(
-        (vendors_top_number_offers + vendors_top_number_offers_missing).configure_axis(
-            labelFontSize=12,
-            titleFontSize=20,
-        ).configure_axisX(
-            labelAngle=-30,
-        ).configure_title(
-            fontSize=32
-        ).properties(
-            height=1000, width=800, title="Number of offers"
-        ),
-    )
+    col_left, col_right = st.beta_columns(2)
+    with col_left, col_right:
+        col_left.altair_chart(
+            (vendors_top_number_offers + vendors_top_number_offers_missing).configure_axis(
+                labelFontSize=12,
+                titleFontSize=20,
+            ).configure_axisX(
+                labelAngle=-30,
+            ).configure_title(
+                fontSize=32
+            ).properties(
+                height=1000, width=800, title="Number of offers"
+            ),
+        )
 
-    # Similar to above, we plot the top 50 vendors, ordered by country and number of offers. Key difference: size now
-    # is the mean of the product price (in that category). Everything else is identical.
-    vendors_top_mean_price = alt.Chart(df_rest).mark_circle().encode(
-        alt.X('category_level_2:O', title='Categories', sort=level_2_order),
-        alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
-        alt.Size('Mean product price:Q', legend=None),
-        alt.Color('shipping_from',
-                  scale=alt.Scale(scheme='category20'),
+        # Similar to above, we plot the top 50 vendors, ordered by country and number of offers. Key difference: size now
+        # is the mean of the product price (in that category). Everything else is identical.
+        vendors_top_mean_price = alt.Chart(df_rest).mark_circle().encode(
+            alt.X('category_level_2:O', title='Categories', sort=level_2_order),
+            alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
+            alt.Size('Mean product price:Q', legend=None),
+            alt.Color('shipping_from',
+                      scale=alt.Scale(scheme='category20'),
+                      ),
+            opacity=alt.value(1),
+            tooltip=[alt.Tooltip('vendor', title='Vendor'),
+                     alt.Tooltip('category_level_2', title='Category lvl 2'),
+                     alt.Tooltip('Count', title='Number of offers'),
+                     alt.Tooltip('Mean product price', title='Average price of listing'),
+                     alt.Tooltip('shipping_from', title='Country of origin')
+                     ]
+        )
+
+        vendors_top_mean_price_missing = alt.Chart(
+            df_not_provided
+        ).mark_circle(
+            color='gray'
+        ).encode(
+            alt.X('category_level_2:N', sort=level_2_order
                   ),
-        opacity=alt.value(1),
-        tooltip=[alt.Tooltip('vendor', title='Vendor'),
-                 alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('Count', title='Number of offers'),
-                 alt.Tooltip('Mean product price', title='Average price of listing'),
-                 alt.Tooltip('shipping_from', title='Country of origin')
-                 ]
-    )
+            alt.Y('vendor',
+                  sort=top_vendors_country_order),
+            alt.Size('Mean product price:Q', legend=None),
+            tooltip=[alt.Tooltip('vendor', title='Vendor'),
+                     alt.Tooltip('category_level_2', title='Category lvl 2'),
+                     alt.Tooltip('Count', title='Number of offers'),
+                     alt.Tooltip('Mean product price', title='Average price of listing'),
+                     alt.Tooltip('shipping_from', title='Country of origin')
+                     ]
+        )
 
-    vendors_top_mean_price_missing = alt.Chart(
-        df_not_provided
-    ).mark_circle(
-        color='gray'
-    ).encode(
-        alt.X('category_level_2:N', sort=level_2_order
-              ),
-        alt.Y('vendor',
-              sort=top_vendors_country_order),
-        alt.Size('Mean product price:Q', legend=None),
-        tooltip=[alt.Tooltip('vendor', title='Vendor'),
-                 alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('Count', title='Number of offers'),
-                 alt.Tooltip('Mean product price', title='Average price of listing'),
-                 alt.Tooltip('shipping_from', title='Country of origin')
-                 ]
-    )
-
-    col4.altair_chart(
-        (vendors_top_mean_price + vendors_top_mean_price_missing).configure_axis(
-            labelFontSize=12,
-            titleFontSize=20,
-        ).configure_axisX(
-            labelAngle=-30,
-            labelFontSize=12,
-        ).configure_title(
-            fontSize=32
-        ).properties(
-            height=1000, width=800, title="Mean product price"
-        ),
-    )
+        col_right.altair_chart(
+            (vendors_top_mean_price + vendors_top_mean_price_missing).configure_axis(
+                labelFontSize=12,
+                titleFontSize=20,
+            ).configure_axisX(
+                labelAngle=-30,
+                labelFontSize=12,
+            ).configure_title(
+                fontSize=32
+            ).properties(
+                height=1000, width=800, title="Mean product price"
+            ),
+        )
 
     st.write("___")
     st.subheader("Drug availability")
@@ -1159,7 +1142,7 @@ elif chapter == '4. Advanced Insights':
              " that:")
 
     st.markdown("""
-            ### 15. There are clear preferences for country within several categories.
+            ### 15. Certain categories are clearly dominated by a specific country.
             
             For instance, benzos and cannabis & hash are very U.S. focused, while dissociatives, steriods and 
             stimulants (between these three) are the Dutch specialty.  
@@ -1364,15 +1347,6 @@ elif chapter == '4. Advanced Insights':
         'offer_verification_level'] = df_combined_grouped_new.nr_offers / df_combined_grouped_new.vendor_count
     df_not_provided_2 = df_combined_grouped_new[df_combined_grouped_new['category_level_2'] == 'Not provided']
     df_rest_2 = df_combined_grouped_new[~df_combined_grouped_new.isin(df_not_provided_2)].dropna(axis=0)
-
-    # df_plot_data = df_combined_grouped.groupby(['verification', 'category_level_2']).mean().reset_index()[
-    #     ['verification', 'category_level_2', 'nr_offers']]
-    # df_not_provided_2 = df_plot_data[df_plot_data['category_level_2'] == 'Not provided']
-    # df_rest_2 = df_plot_data[~df_plot_data.isin(df_not_provided_2)].dropna(axis=0)
-
-    level_2_order = ['Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates', 'Stimulants',
-                     'Psychedelics', 'Benzos', 'Prescriptions Drugs', 'Steroids', 'Weight Loss',
-                     'Accessories', 'Tobacco', 'Not provided']
 
     vendor_top = alt.Chart(df_rest_2).mark_circle().encode(
         alt.Y('category_level_2:O', sort=level_2_order, title='Categories'),
