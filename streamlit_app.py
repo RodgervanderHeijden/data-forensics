@@ -8,7 +8,7 @@ import altair as alt
 from PIL import Image
 
 # BASE SETUP
-st.set_page_config(page_title=None, page_icon=None, layout='wide', initial_sidebar_state='expanded')
+st.set_page_config(page_title='Group 17: Data Forensics Dashboard', page_icon=None, layout='wide', initial_sidebar_state='expanded')
 st.title('Shining a Light on the Dark Web')
 
 
@@ -414,6 +414,7 @@ if chapter == "2. Product Insights":
         "differences, which we thought was quite interesting. "
     )
 
+# CHAPTER 3
 if chapter == "3. Vendor Insights":
     # count rank
     ranks = pd.DataFrame(df_vendors['rank'].value_counts())
@@ -605,7 +606,7 @@ elif chapter == '4. Advanced Insights':
     st.write("In the previous sections we have provided some general but interesting insights regarding the product "
              "offerings and vendors on ToRReZ. In this section we will go a step further and analyse the market in "
              "more detail. We are specifically interested in relationships that enable us to better grasp the dynamics "
-             "and interactions within this market. This allows us to better understand the drug flow on the dark web."
+             "and interactions within this market. This allows us to better understand the drug flow on the dark web. "
              "We will first dive into the kind of drugs sold by the top vendors after which we will investigate the "
              "effect of trust on the sales in this market.")
 
@@ -632,7 +633,7 @@ elif chapter == '4. Advanced Insights':
     st.write(
         "The resulting figure, as shown below, is very information dense. We will cover some interesting insights, "
         "but have left some others to be discovered by the reader. ")
-    st.write("")
+    st.subheader("Main categories")
 
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
@@ -751,6 +752,8 @@ elif chapter == '4. Advanced Insights':
     df_not_provided = df_plot_data[df_plot_data['category_level_3'] == 'Not provided']
     df_rest = df_plot_data[~df_plot_data.isin(df_not_provided)].dropna(axis=0)
 
+    st.subheader("Subcategories")
+
     level_3_order = [
         'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping',
         # Cannabis & Hash
@@ -857,6 +860,32 @@ elif chapter == '4. Advanced Insights':
             ['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $', 'shipping_from', 'shipping_to']])
 
     st.write("___")
+    st.subheader("Vendors")
+    st.write(
+        "These insights are quite interesting, but now let's shift the focus to the vendors themselves. The x-axis "
+        "contains the categories of drugs, and the y-axis shows the top 50 vendors. The left figure shows the number of"
+        " offers as the size, while the right figure shows the mean product price as size.  "
+    )
+
+    st.markdown("""
+        ### 9. Vendors with a lot of offers are cheaper on average 
+        
+        When looking at the vendors that offer a wide variety of drugs within a category, for instance RoyalMailer with
+        310 offers within the Cannabis & Hash category, we see that their mean product price is quite low. Or look at 
+        vendors LucySkyDiamonds (a reference to the Beatles hit song about LSD) and Hofmanncrew: despite being the most
+        active vendors on ToRReZ, their average price is less pronounced. 
+        
+        ### 10. Drug offer prices are more dependent on the vendor than the actual drugs
+        
+        When looking per category, we see that the larger dots do correlate with the category. Of course, we also saw
+        this effect on the _Product Insights_ page. Stimulants and Dissociatives for example contain sizable markers.
+        However, quite to our surprise, the differences in offer price between sellers within a category is larger than 
+        the differences in offer price between categories. 
+        
+        ### 11. Vendors that specialize in certain categories are cheaper on average than vendors that sell everything.
+        
+        The large dots on the 
+    """)
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
     # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
@@ -865,7 +894,7 @@ elif chapter == '4. Advanced Insights':
     top_vendors_offers.fillna("Not provided", inplace=True)
 
     # A new groupby such that the index is (vendor, category) and the resulting value is frequency ("count").
-    plot_df = top_vendors_offers.groupby(['vendor', 'category_level_2', 'category_level_3', 'shipping_from']).agg(
+    plot_df = top_vendors_offers.groupby(['vendor', 'category_level_2', 'shipping_from']).agg(
         ['mean', 'count'])
     plot_df.columns = ['Mean product price', 'Count']
     plot_df['Mean product price'].astype(int)
@@ -874,9 +903,6 @@ elif chapter == '4. Advanced Insights':
     # df_plot_data = top_vendors_offers.groupby(['vendor', 'category_level_3', 'category_level_2']).count().reset_index()[['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $']]
     df_not_provided = plot_df[plot_df['shipping_from'] == 'Not provided']
     df_rest = plot_df[~plot_df.isin(df_not_provided)].dropna(axis=0)
-    st.write(df_rest)
-    st.write(df_not_provided)
-    st.write(df_drugs)
 
     for seller in df_rest['vendor']:
         country_of_origin = df_vendors[df_vendors['vendor'] == seller]
@@ -885,8 +911,6 @@ elif chapter == '4. Advanced Insights':
         'Buds & Flowers', 'Edibles', 'Hash', 'Prerolls', 'Seeds', 'Shake', 'Synthetic', 'Topical', 'Vaping',
         # Cannabis & Hash
         'GBL', 'Ketamine',  # Dissociatives
-        'GBL', 'Ketamine',  # Dissociatives
-        'GBL', 'Ketamine',  # Dissociatives
         'MDMA', 'Pills',  # Ecstacy
         'Powder',  # Benzos
         'Codeine', 'Heroin', 'Oxycodone', 'RC',  # Opiates
@@ -894,9 +918,31 @@ elif chapter == '4. Advanced Insights':
         '2C-B', '5-MeO-DMT', 'DMT', 'LSD', 'Mescaline', 'Mushrooms',  # Psychedelics
         'Not provided']
 
+    top_vendors_country_order = [
+        'RoyalMailer', 'PitStopUK', 'Everylittlehalps', 'LucySkyDiamonds', 'DrSeuss', 'kandykones',
+        'jnenfrancis', 'cerberusuk', 'exclusivepharma', 'maurelius', 'MedicineMan420', 'BritishStandard',
+        'Pygmalion', # UK
+
+        'drkend', 'MicroDroper', # China
+
+        'California420Service', 'StrainPirate', 'RXChemist', 'topmoneymaker', 'CanadianSmoker12', 'TheRxPharma',
+        'vessel', 'Worldtime', # US
+
+        'inc', 'auspride', # Aus
+
+        'akgeneric', 'TheBodyShop', 'bestgroup', # India
+
+        # Netherlands
+        'NextLevel', 'SteroidWarehouse', 'donalddrugs', 'RoleXx17', 'DutchGlory', 'Hofmanncrew', 'tomandjerry',
+        'ScotchAndCoca', 'StreetLegend','maxverstappen', 'EUROSHOPPER', 'DoctorXXL', 'Coffeshop', 'DutchPharmacy',
+        'NarcoticsWorldwide', 'MisterX', 'DrugAmazon', 'loveloyalty', 'FGWL', 'Mont-Blanc', 'Island_Paradise',
+
+        # Lithuania
+        'PSteroids']
+
     vendors_top = alt.Chart(df_rest).mark_circle().encode(
         alt.X('category_level_2:O', title='Categories', sort=level_2_order),
-        alt.Y('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
         alt.Size('Count:Q', legend=None),
         alt.Color('shipping_from',
                   scale=alt.Scale(scheme='category20'),
@@ -904,7 +950,6 @@ elif chapter == '4. Advanced Insights':
         opacity=alt.value(1),
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('category_level_3', title='Category lvl 3'),
                  alt.Tooltip('Count', title='Number of offers'),
                  alt.Tooltip('Mean product price', title='Average price of listing'),
                  alt.Tooltip('shipping_from', title='Country of origin')
@@ -919,11 +964,10 @@ elif chapter == '4. Advanced Insights':
         alt.X('category_level_2:N', sort=level_2_order
               ),
         alt.Y('vendor',
-              sort=top_vendors),
+              sort=top_vendors_country_order),
         alt.Size('Count:Q', legend=None),
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('category_level_3', title='Category lvl 3'),
                  alt.Tooltip('Count', title='Number of offers'),
                  alt.Tooltip('Mean product price', title='Average price of listing'),
                  alt.Tooltip('shipping_from', title='Country of origin')
@@ -944,16 +988,9 @@ elif chapter == '4. Advanced Insights':
         ),
     )
 
-    # EXTENTION:
-    # Order such that continents are together
-
-    # Above: size = counts, color is country of origin. Order them together
-
-    # Below: size = mean price
-
     vendors_top = alt.Chart(df_rest).mark_circle().encode(
         alt.X('category_level_2:O', title='Categories', sort=level_2_order),
-        alt.Y('vendor:N', sort=top_vendors, title='Vendors'),
+        alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
         alt.Size('Mean product price:Q', legend=None),
         alt.Color('shipping_from',
                   scale=alt.Scale(scheme='category20'),
@@ -961,7 +998,6 @@ elif chapter == '4. Advanced Insights':
         opacity=alt.value(1),
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('category_level_3', title='Category lvl 3'),
                  alt.Tooltip('Count', title='Number of offers'),
                  alt.Tooltip('Mean product price', title='Average price of listing'),
                  alt.Tooltip('shipping_from', title='Country of origin')
@@ -976,11 +1012,10 @@ elif chapter == '4. Advanced Insights':
         alt.X('category_level_2:N', sort=level_2_order
               ),
         alt.Y('vendor',
-              sort=top_vendors),
+              sort=top_vendors_country_order),
         alt.Size('Mean product price:Q', legend=None),
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('category_level_3', title='Category lvl 3'),
                  alt.Tooltip('Count', title='Number of offers'),
                  alt.Tooltip('Mean product price', title='Average price of listing'),
                  alt.Tooltip('shipping_from', title='Country of origin')
@@ -1007,7 +1042,6 @@ elif chapter == '4. Advanced Insights':
         color='shipping_from',
         tooltip=[alt.Tooltip('vendor', title='Vendor'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
-                 alt.Tooltip('category_level_3', title='Category lvl 3'),
                  alt.Tooltip('shipping_from', title='Country of origin')
                  ]
     )
