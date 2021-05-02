@@ -863,7 +863,8 @@ elif chapter == '4. Advanced Insights':
     st.subheader("Vendors")
     st.write(
         "These insights are quite interesting, but now let's shift the focus to the vendors themselves. The x-axis "
-        "contains the categories of drugs, and the y-axis shows the top 50 vendors. The left figure shows the number of"
+        "contains the categories of drugs, and the y-axis shows the top 50 vendors. They are - in both cases - ordered "
+        "by the country of origin (shipping from), and then by number of offers. The left figure shows the number of"
         " offers as the size, while the right figure shows the mean product price as size.  "
     )
 
@@ -873,7 +874,7 @@ elif chapter == '4. Advanced Insights':
         When looking at the vendors that offer a wide variety of drugs within a category, for instance RoyalMailer with
         310 offers within the Cannabis & Hash category, we see that their mean product price is quite low. Or look at 
         vendors LucySkyDiamonds (a reference to the Beatles hit song about LSD) and Hofmanncrew: despite being the most
-        active vendors on ToRReZ, their average price is less pronounced. 
+        active vendors on ToRReZ, their average price is a lot less pronounced. 
         
         ### 10. Drug offer prices are more dependent on the vendor than the actual drugs
         
@@ -884,8 +885,28 @@ elif chapter == '4. Advanced Insights':
         
         ### 11. Vendors that specialize in certain categories are cheaper on average than vendors that sell everything.
         
-        The large dots on the 
+        The specialists, such as RoyalMailer, kandykones, California420Service, StrainPirate or PSteroids, are notable 
+        within their drug category and primarily sell (a lot of) one specific group of drugs. However, they do not 
+        appear in the right graph, which shows the average listing price. This seems counter-intuitive to us, as one
+        could pose that expertise could translate into more specified listings and also more expensive. A pedigree of 
+        quality, if you will. However, since the inverse seems true, we suggest that it's maybe a question of scale: if
+        you can sell large quantities of drugs, then the production and sale of drugs per unit decrease, and 
+        undercutting your competitors can in turn ensure that your sales increase even more. This theory is given some 
+        credence by the two vendors that sell exclusively from Australia (and as we have seen earlier, exclusively to 
+        Australia): though _inc_ has more offers overall, _auspride_ is (significantly) more expensive.
+        
+        ### 12. The top vendors have several shipping locations
+        
+        Vendors like drkend, akgeneric, TheBodyShop and NarcoticsWorldwide post their offers with several locations 
+        where they ship from. For drkend it's mainly China with a bit of Canada, for akgeneric it's primarily India
+        with 28 offers from the United States, TheBodyShop also ships from India primarily but offers other drugs from
+        the Netherlands, and NarcoticsWorldwide it's between Germany and Australia. With the opportunity to offer 
+        multiple types of drugs getting shipped from multiple countries, we are confident that these vendors are part 
+        of a large organisation. 
     """)
+    # Not required but used for a bit of padding
+    st.write("")
+    st.write("")
     # Quite a chained operation, so explanation:
     # Groupby vendor, then show count. Sort values by product (the column here doesn't matter too much, as long as these no missings)
     # Show the top 50 highest # of offers and take the index (the account names) to convert that to a list for further selection
@@ -940,7 +961,9 @@ elif chapter == '4. Advanced Insights':
         # Lithuania
         'PSteroids']
 
-    vendors_top = alt.Chart(df_rest).mark_circle().encode(
+    # We plot the top vendors - ordered by the country of _shipping_from_ primarily and _number of offers_ secondly -
+    # with the size being also the number of offers.
+    vendors_top_number_offers = alt.Chart(df_rest).mark_circle().encode(
         alt.X('category_level_2:O', title='Categories', sort=level_2_order),
         alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
         alt.Size('Count:Q', legend=None),
@@ -956,7 +979,8 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
-    vendor_top_missing = alt.Chart(
+    # We separately plot the data where the category is Not Provided, and then later add it to the same graph
+    vendors_top_number_offers_missing = alt.Chart(
         df_not_provided
     ).mark_circle(
         color='gray'
@@ -976,7 +1000,7 @@ elif chapter == '4. Advanced Insights':
 
     col2, col4 = st.beta_columns(2)
     col2.altair_chart(
-        (vendors_top + vendor_top_missing).configure_axis(
+        (vendors_top_number_offers + vendors_top_number_offers_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
         ).configure_axisX(
@@ -984,11 +1008,13 @@ elif chapter == '4. Advanced Insights':
         ).configure_title(
             fontSize=32
         ).properties(
-            height=1000, width=700, title="Number of offers"
+            height=1000, width=800, title="Number of offers"
         ),
     )
 
-    vendors_top = alt.Chart(df_rest).mark_circle().encode(
+    # Similar to above, we plot the top 50 vendors, ordered by country and number of offers. Key difference: size now
+    # is the mean of the product price (in that category). Everything else is identical.
+    vendors_top_mean_price = alt.Chart(df_rest).mark_circle().encode(
         alt.X('category_level_2:O', title='Categories', sort=level_2_order),
         alt.Y('vendor:N', sort=top_vendors_country_order, title='Vendors'),
         alt.Size('Mean product price:Q', legend=None),
@@ -1004,7 +1030,7 @@ elif chapter == '4. Advanced Insights':
                  ]
     )
 
-    vendor_top_missing = alt.Chart(
+    vendors_top_mean_price_missing = alt.Chart(
         df_not_provided
     ).mark_circle(
         color='gray'
@@ -1023,7 +1049,7 @@ elif chapter == '4. Advanced Insights':
     )
 
     col4.altair_chart(
-        (vendors_top + vendor_top_missing).configure_axis(
+        (vendors_top_mean_price + vendors_top_mean_price_missing).configure_axis(
             labelFontSize=12,
             titleFontSize=20,
         ).configure_axisX(
@@ -1032,15 +1058,30 @@ elif chapter == '4. Advanced Insights':
         ).configure_title(
             fontSize=32
         ).properties(
-            height=1000, width=700, title="Mean product price"
+            height=1000, width=800, title="Mean product price"
         ),
     )
 
-    strip = alt.Chart(df_drugs).mark_tick().encode(
+    st.write("___")
+    st.subheader("Drug availability")
+
+    st.write(
+        "In the previous graphs we have already seen that the offer of different categories of drugs differs between "
+        "countries. But, to what extend? These following graphs delve deeper into that aspect. The first graph shows "
+        "the categories on the y-axis, with the countries of origin on the x-axis. The colorcoding is done by country "
+        "of origin, with the opacity (intensity of the color) being the number of offers. So, the United Kingdom and "
+        "the United States have a priority on Cannabis & Hash, while Germany and the Netherlands sell most of "
+        "Stimulants. "
+    )
+
+    strip = alt.Chart(df_drugs.fillna("Not provided")).mark_square(size=625).encode(
         x=alt.X('shipping_from', title='Shipping from'),
         y=alt.Y('category_level_2', title='Category (level 2)'),
         color='shipping_from',
-        tooltip=[alt.Tooltip('vendor', title='Vendor'),
+        opacity=alt.Opacity('count(vendor):Q', scale=alt.Scale(type='pow', clamp=False,
+                                                               bins=[0.1, 1, 10, 100, 500, 1000]),
+                            legend=None),
+        tooltip=[alt.Tooltip('count(vendor)', title='Number of offers'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
                  alt.Tooltip('shipping_from', title='Country of origin')
                  ]
@@ -1054,13 +1095,39 @@ elif chapter == '4. Advanced Insights':
     ).configure_title(
         fontSize=32
     ).properties(
-        title='Does country x sell drug y?'
-        # height=1000, width=700, title="Mean product price"
-    ))
+        title='Does country x sell drug y?',
+        height=550
+    ), use_container_width=True)
 
-    st.write("Findings: ")
+    st.markdown("""### 13. The most popular countries sell (nearly) everything""")
 
-    st.write("1. Tobacco originates fro mSpain and Germany, several countries sell just one drug.")
+    st.write(
+        "Basically every category of drugs gets shipped from Australia, Canada, China, France, Germany, Netherlands, "
+        "United Kingdom and United States, which are the most popular countries as seen before. No surprises there. "
+        "However, the converse is quite interesting: countries as Colombia, Latvia, Lithuania, Mexico and Peru sell "
+        "just one drug category, all of which match common sense/stereotypes: Colombia and Peru sell coke (Stimulants),"
+        " Latvia and Lithuania sell steroids and Mexico sells psychedelics.")
+
+    st.markdown("""
+    ### 14. Tobacco is only being offered from Germany and Spain
+    
+    Though tobacco in itself is legal, the counterfeit variant of course is not legal. This 'new' category - it did not
+    show up in the top 50 vendors - is only being shipped from Germany and Spain, which we thought was quite 
+    interesting, as the smoking populace is quite heavily on the decline. Given the relative unpopularity of the 
+    category (a total of 15 offers), we wonder why ToRReZ has tobacco as separate category.
+    """)
+
+    st.write("___")
+
+    st.write("The next plots look at the price per category, country and destination. First of all, we select the "
+             "subset of offers that are less than $10.000, as the few offers above distort the remaining data too "
+             "much. The opportunity for a second subset exists at the hands of the reader: using the dropdown menu "
+             "one can (de)select countries to their choosing. For these points, we've selected the three countries of "
+             "Australia, the Netherlands and the United States, but one can imagine that there are countless yet "
+             "undescribed insights hidden in the data.")
+
+    st.write("Then, we convey the price in two factors: the y axis position and the size of the circle. The "
+             "country of origin in all three figures is color-coded. ")
 
     shipping_from_countries = list(df_drugs.shipping_from.unique())
     shipping_from_countries_copy = ['All countries'] + shipping_from_countries
@@ -1113,6 +1180,16 @@ elif chapter == '4. Advanced Insights':
     ).interactive()
     st.altair_chart(stripplot_by_category, use_container_width=False)
 
+    st.write("Above graph looks at the category by country of origin and by price. With our default selection, we note"
+             " that:")
+
+    st.markdown("""
+            ### 15. There are clear preferences for country within several categories.
+            
+            For instance, benzos and cannabis & hash are very U.S. focused, while dissociatives, steriods and 
+            stimulants (between these three) are the Dutch specialty.  
+    """)
+
     stripplot_by_country = alt.Chart(df_country, width=min(1200 / len(select_country), 250)).mark_point().encode(
         x=alt.X(
             'jitter:Q',
@@ -1161,6 +1238,22 @@ elif chapter == '4. Advanced Insights':
     ).interactive()
 
     st.altair_chart(stripplot_by_country, use_container_width=False)
+
+    st.write("Above graph looks at the price distribution (sub $10.000) between the selected countries, so between "
+             "Australia, the Netherlands and the US by default. Though not interesting enough to deserve its own "
+             "insight-header, we do notice that the US has way more offers just under $10.000 than the other two "
+             "countries. The real meat of this subject however can be found in the next figure. We see the location of "
+             "destination, color coded for country of origin. We see that there are no Australian or American drugs "
+             "being sold exclusively to Europe or the Netherlands, and that there are no Australian or Dutch drugs "
+             "being sold exclusively to the US or North America. Of course, that makes sense: if you ship to those "
+             "countries, it makes sense to just ship worldwide. ")
+
+    st.markdown("""
+        ### 16. Australia exclusively ships to Australia
+        
+        This is peculiar: no Australian offer (below $10.000) ships worldwide. We thought this effect was very strange,
+        but could not come up with an explanation for it. 
+    """)
 
     shipping_to_value_counts = df_country['shipping_to'].value_counts()
     countries_with_50_min = shipping_to_value_counts[shipping_to_value_counts > 50].index
