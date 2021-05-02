@@ -8,7 +8,8 @@ import altair as alt
 from PIL import Image
 
 # BASE SETUP
-st.set_page_config(page_title='Group 17: Data Forensics Dashboard', page_icon=None, layout='wide', initial_sidebar_state='expanded')
+st.set_page_config(page_title='Group 17: Data Forensics Dashboard', page_icon=None, layout='wide',
+                   initial_sidebar_state='expanded')
 st.title('Shining a Light on the Dark Web')
 
 
@@ -66,26 +67,23 @@ with st.sidebar:
 
 # CHAPTER 0
 if chapter == "0. Preface":
-    col_left, col_right = st.beta_columns((2, 1))
+    col_left, col_right = st.beta_columns((3, 1))
     with col_left, col_right:
         col_left.subheader("A dashboard highlighting insights into dark web drug selling")
         col_left.write("""
         In the context of the course Data Forensics of their master's degree Data Science & Entrepreneurship, two 
         students - Thaibinh Luu and Rodger van der Heijden - were tasked to develop insights into criminal behaviour on 
-        the web. Drawn by the interesting nature of the assignment, they shared an extreme motivation to not only finish
-        this assignment, but to make something truly special of it. 
+        the web. Both drawn by the interesting nature of the assignment, they shared the motivation to make something 
+        of this assignment. 
 
-        This project is heavily focused on counterfeit/falsified medicine, drugs and NPS.
-        We saw the most potential in this ANITA scenario and believe it has the most information available. 
-        As these illicit goods may negatively impact public health, it is of great essence to monitor and analyse these trafficking flows.
-        As a lot of illegal trafficking is facilitated by marketplaces on the dark web, we were motivated to analyse the supply and demand on this specific level of the internet. 
+        This project is heavily focused on counterfeit/falsified medicine, drugs and NPS. We saw the most potential in 
+        this ANITA scenario and believe it has the most information available. As these illicit goods may negatively 
+        impact public health, it is of great essence to monitor and analyse these trafficking flows. Since a lot of 
+        drug trafficking is facilitated by marketplaces on the dark web, we decided to extract knowledge regarding the 
+        online drug sales. 
         
-        The ultimate goal of this project is to gain valuable insights in one of the largest dark web marketplaces for drugs: ToRReZ.
-        By thoroughly analysing this market, we hope to get a sense of the popular types of drugs, the trafficking flow, supply, demand and so on. 
-        Better understanding the market may help in identifying key players and keeping track of illegal drug flows. 
-
-        Data was collected by crawling and scraping the dark web marketplace TorreZ. To do so, and to be able to extract
-        exactly the desired data, they wrote their own crawler and scraper. Data collection occurred on the 5th of 
+        Data was collected by crawling and scraping the dark web marketplace ToRReZ. To do so, and to be able to extract
+        exactly the desired data, we wrote our own crawler and scraper. Data collection occurred on the 5th of 
         March. Be aware that any offers, vendors and pricing therefore may already be outdated.
 
         Insights derived from the retrieved data were diligently analysed, with the key takeaways shared in the 
@@ -96,18 +94,19 @@ if chapter == "0. Preface":
         
         Where possible (and where logical) we have included the option for interactivity, which presents itself in the 
         ability to hover of data, zoom, pan and select subsets. We strongly encourage the reader to use the sandbox to 
-        their own liking; we merely provide the tools that allow you to discover additional insights. 
+        their own liking; we merely provide the tools that allow you to discover additional insights. Lastly, do note 
+        that the page was designed with the sidebar collapsed; in expanded state some figures may lose their visual 
+        appeal. 
 
-        In case any question remains, some confusion arises or additional information is desired, please do contact us. 
         Wishing you the best reading experience possible, 
 
         Thaibinh Luu and Rodger van der Heijden
         """)
-        col_right.subheader("About the authors")
+        col_right.subheader("The authors")
         col_right.write("""
-            Group 17, consisting of Thaibinh Luu and Rodger van der Heijden, has chosen to tackle online drug selling. Both
-            students are close to finishing the master's degree Data Science & Entrepreneurship at the Jheronimus Academy of
-            Data Science (JADS). 
+            Group 17, consisting of Thaibinh Luu and Rodger van der Heijden, has chosen to tackle online drug selling. 
+            Both students are close to finishing the master's degree Data Science & Entrepreneurship at the Jheronimus
+            Academy of Data Science (JADS). 
         """)
 
 # CHAPTER 1
@@ -197,12 +196,10 @@ if chapter == "2. Product Insights":
     df_drugs, df_vendors = return_specified_data(st_country_select)
 
     st.write(
-        "One of the two data sets we have scraped details the 14.013 offers that existed. Here we describe that data "
-        "and showcase some interesting aspects we have found. In essence the figures on this page cover all countries, "
-        "but the option to select specific countries within the data set exists. The tool below provides all options in"
-        " both a dropdown menu and a search box; the figures will then automatically update. Do not worry, this setting"
-        " does not persist over the entire dashboard. Lastly, do note that the page was designed with the sidebar "
-        "collapsed, in expanded state some labels are not (fully) visible. "
+        "Here we describe the data about the individual offers and showcase some interesting aspects we have found. "
+        "In essence the figures on this page cover all countries, but the option to select specific countries within "
+        "the data set exists. The tool below provides all options in both a dropdown menu and a search box; the figures"
+        " will then automatically update with the relevant data."
     )
     st.subheader("Shipping locations")
 
@@ -238,60 +235,30 @@ if chapter == "2. Product Insights":
         "Combined they represent 675 offers, yet nearly all of those are intended for the international market. China, "
         "India or Asia combined all have fewer than 100 offers that ship to these locations. "
     )
-    st.write("___")
 
     col_left, col_right = st.beta_columns(2)
     with col_left, col_right:
         df_origin = pd.DataFrame(df_drugs.shipping_from.value_counts()).reset_index()
         df_origin.columns = ['country', 'shipping_from']
-        df_2 = df_origin.copy()
+        # We select only the countries which occur over 100 times in the "shipping from" category
         df_origin.loc[df_origin[
                           'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
-        fig3 = px.pie(df_origin, values='shipping_from', names='country',
-                      title='Shipping from (having at least 100 offers):', hole=.4)
+        # Then we create a pie chart (using Plotly) with these countries.
+        fig_country_origin = px.pie(df_origin, values='shipping_from', names='country',
+                                    title='Shipping origins (having at least 100 offers):', hole=.4)
+        col_left.plotly_chart(fig_country_origin, use_container_width=True)
 
-        fig7 = go.Figure()
         df_destination = pd.DataFrame(df_drugs.shipping_to.value_counts())
         df_destination.reset_index(inplace=True)
-        df_destination.columns = ['country', 'shipping_from']
-        df_destination.loc[
-            df_destination[
-                'shipping_from'] < 100, 'country'] = 'Other countries'  # Represent only large countries
-        fig7 = px.pie(df_destination, values='shipping_from', names='country',
-                      title='Shipping to (having at least 100 offers):', hole=.4)
+        df_destination.columns = ['country', 'shipping_to']
+        # We select only the regions which have over 100 occurances in the destination
+        df_destination.loc[df_destination[
+                               'shipping_to'] < 100, 'country'] = 'Other countries'  # Represent only large countries
+        # And, just like above, we plot that in a pie chart.
+        fig_country_destination = px.pie(df_destination, values='shipping_to', names='country',
+                                         title='Shipping destinations (having at least 100 offers):', hole=.4)
 
-        fig3.update_layout(autosize=False,
-                           width=750,
-                           height=600)
-
-        fig7.update_layout(autosize=False,
-                           width=750,
-                           height=600)
-
-        col_left.plotly_chart(fig3)
-        col_right.plotly_chart(fig7)
-
-    st.write("___")
-    st.subheader("A map showing the countries of origin. ")
-    input_countries = df_2.country
-    country_3 = []
-    for country in input_countries:
-        try:
-            country_3.append(pycountry.countries.get(name=country).alpha_3)
-        except:
-            country_3.append(pycountry.countries.search_fuzzy(country)[0].alpha_3)
-
-    df_2['iso_alpha'] = country_3
-    fig4 = px.choropleth(df_2, locations="iso_alpha",
-                         color="shipping_from",
-                         hover_name="country",  # column to add to hover information
-                         color_continuous_scale=px.colors.sequential.ice_r)
-    fig4.update_layout(
-        title_text='A map displaying the (self-reported) locations of origin of each offer. The darker the color, the '
-                   'more offers. Specific numbers are provided on hover.', title_x=0.5)
-    fig4.update_layout(coloraxis_showscale=False,
-                       width=800, height=700)
-    st.plotly_chart(fig4, use_container_width=True)
+        col_right.plotly_chart(fig_country_destination, use_container_width=True)
 
     st.write("___")
     st.header("Drug pricing")
@@ -324,15 +291,10 @@ if chapter == "2. Product Insights":
 
     category_prices, category_avg_prices = st.beta_columns(2)
     with category_prices, category_avg_prices:
+        # These lists will be used later: they are set as the order in which the categories will appear.
         lvl_2_cats = ['Accessories', 'Benzos', 'Cannabis & Hash', 'Dissociatives', 'Ecstasy', 'Opiates',
-                      'Prescriptions Drugs', 'Psychedelics', 'Steroids', 'Stimulants', 'Weight Loss', 'Tobacco', ]
-        # order_list = ['Dissociatives', 'RC', 'GBL', 'Powder', 'Benzos', 'Speed', 'Meth', 'Ecstasy',
-        #               'Heroin', 'Cocaine', 'Oxycodone', 'Ketamine', '2C-B', 'Opiates', 'MDMA',
-        #               'Vaping', 'Cannabis & Hash', 'Stimulants', 'Synthetic', 'LSD', 'Buds & Flowers', 'Vyvanse',
-        #               'Pills', 'Mushrooms', 'Hash', 'Adderal', '4-FA', 'Crack', 'Shake', 'DMT', 'GHB',
-        #               'Mescaline', 'Topical', 'Codeine', 'Psychedelics', 'Buprenorphine', 'Prescriptions Drugs',
-        #               'Steroids', 'Tobacco', 'Edibles', 'Seeds', 'Weight Loss', 'Accessories',
-        #               'Prerolls',] #based on price of average offer
+                      'Prescriptions Drugs', 'Psychedelics', 'Steroids', 'Stimulants', 'Weight Loss', 'Tobacco']
+
         order_list = ['Dissociatives', 'GBL', 'Ketamine', 'GHB', 'RC', 'Powder', 'Benzos', 'Pills', 'Heroin',
                       'Oxycodone', 'Opiates', 'Codeine', 'Buprenorphine', 'Speed', 'Meth', 'Cocaine', 'Stimulants',
                       'Vyvanse', 'Adderal', '4-FA', 'Crack', 'Ecstasy', 'MDMA', '2C-B', 'LSD', 'Mushrooms', 'DMT',
@@ -346,12 +308,11 @@ if chapter == "2. Product Insights":
                       'category_level_2': lvl_2_cats}
         df_plot_data = df_drugs[df_drugs['highest_category'].isin(order_list)]
 
+        # We drop data with missing fields in these essential columns
         df_plot_data.dropna(subset=['highest_category', 'price', 'category_level_2'], how='any', inplace=True, axis=0)
-        df_data_ordered_by_price = df_plot_data.groupby(
-            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
-            by='price', ascending=False)
 
         category_prices.subheader("Drug prices for all categories")
+        # Create a strip plot using Plotly and the dataframe + order we have just defined.
         fig_category_prices = px.strip(df_plot_data,
                                        x="price",
                                        y="highest_category",
@@ -362,6 +323,12 @@ if chapter == "2. Product Insights":
         category_prices.plotly_chart(fig_category_prices, use_container_width=True)
 
         category_avg_prices.subheader("Average prices for each category")
+        # We group by the highest category and category level 2 to calculate the mean price.
+        df_data_ordered_by_price = df_plot_data.groupby(
+            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
+            by='price', ascending=False)
+
+        # Those mean prices are then plotted with a strip plot, with the earlier defined order.
         fig_category_avg_prices = px.strip(df_data_ordered_by_price,
                                            x="price",
                                            y="highest_category",
@@ -371,38 +338,45 @@ if chapter == "2. Product Insights":
         fig_category_avg_prices.update_layout(height=800)
         category_avg_prices.plotly_chart(fig_category_avg_prices, use_container_width=True)
 
-    col4, col6 = st.beta_columns(2)
-    with col4, col6:
+    category_prices, category_avg_prices = st.beta_columns(2)
+    with category_prices, category_avg_prices:
         freq = df_plot_data['highest_category'].value_counts()
-        # Select frequent values. Value is in the index.
+        # Select frequent values, so categories with a lot of offers. The value itself is in the index.
         frequent_values = freq[freq >= 100].index
-        # Return only rows with value frequency above threshold.
+        # Return only rows with at least 100 offers.
         df_temp = df_plot_data[df_plot_data['highest_category'].isin(frequent_values)]
-        df_temp_avg = df_temp.groupby(
-            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
-            by='price', ascending=True)
+
+        # A new order list comprehension: with the selected countries it may be possible that several categories do not
+        # meet the 100 offers threshold. To prevent lack of data, we do not include those categories as labels.
         order_list_country_specific = [category for category in order_list if category in frequent_values]
         plot_order_country_specific = {'category_level_3': order_list_country_specific,
                                        'highest_category': order_list_country_specific,
                                        'category_level_2': lvl_2_cats}
-        fig1 = px.strip(df_temp,
-                        x="price",
-                        y="highest_category",
-                        color="category_level_2",
-                        category_orders=plot_order_country_specific,
-                        )
-        fig2 = px.strip(df_temp_avg,
-                        x="price",
-                        y="highest_category",
-                        color="category_level_2",
-                        category_orders=plot_order_country_specific,
-                        )
-        fig1.update_layout(height=800)
-        col4.subheader("Drug prices for categories with at least 100 offers")
-        col4.plotly_chart(fig1, use_container_width=True)
-        fig2.update_layout(height=800)
-        col6.subheader("Average prices for each category with at least 100 offers")
-        col6.plotly_chart(fig2, use_container_width=True)
+        # As before, we plot the new subset of data on a stripplot.
+        fig_category_prices_threshold = px.strip(df_temp,
+                                                 x="price",
+                                                 y="highest_category",
+                                                 color="category_level_2",
+                                                 category_orders=plot_order_country_specific,
+                                                 )
+        category_prices.subheader("Drug prices for categories with at least 100 offers")
+        # We define a certain height: lower than that and some labels on the y axis get hidden
+        fig_category_prices_threshold.update_layout(height=800)
+        category_prices.plotly_chart(fig_category_prices_threshold, use_container_width=True)
+
+        # Same as before, group by highest category and category level two and calculate the mean scores.
+        df_temp_avg = df_temp.groupby(
+            ['highest_category', 'category_level_2']).mean().reset_index().sort_values(
+            by='price', ascending=True)
+        fig_category_avg_prices_threshold = px.strip(df_temp_avg,
+                                                     x="price",
+                                                     y="highest_category",
+                                                     color="category_level_2",
+                                                     category_orders=plot_order_country_specific,
+                                                     )
+        category_avg_prices.subheader("Average prices for each category with at least 100 offers")
+        fig_category_avg_prices_threshold.update_layout(height=800)
+        category_avg_prices.plotly_chart(fig_category_avg_prices_threshold, use_container_width=True)
 
     st.write(
         "When looking at the data for the selected country or countries and then taking only the (sub)categories with "
@@ -857,7 +831,8 @@ elif chapter == '4. Advanced Insights':
 
     st.write(
         df_drugs[df_drugs['category_level_2'].isin(['Accessories'])].reset_index(drop=True)[
-            ['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $', 'shipping_from', 'shipping_to']])
+            ['vendor', 'category_level_2', 'category_level_3', 'product', 'price in $', 'shipping_from',
+             'shipping_to']])
 
     st.write("___")
     st.subheader("Vendors")
@@ -942,20 +917,20 @@ elif chapter == '4. Advanced Insights':
     top_vendors_country_order = [
         'RoyalMailer', 'PitStopUK', 'Everylittlehalps', 'LucySkyDiamonds', 'DrSeuss', 'kandykones',
         'jnenfrancis', 'cerberusuk', 'exclusivepharma', 'maurelius', 'MedicineMan420', 'BritishStandard',
-        'Pygmalion', # UK
+        'Pygmalion',  # UK
 
-        'drkend', 'MicroDroper', # China
+        'drkend', 'MicroDroper',  # China
 
         'California420Service', 'StrainPirate', 'RXChemist', 'topmoneymaker', 'CanadianSmoker12', 'TheRxPharma',
-        'vessel', 'Worldtime', # US
+        'vessel', 'Worldtime',  # US
 
-        'inc', 'auspride', # Aus
+        'inc', 'auspride',  # Aus
 
-        'akgeneric', 'TheBodyShop', 'bestgroup', # India
+        'akgeneric', 'TheBodyShop', 'bestgroup',  # India
 
         # Netherlands
         'NextLevel', 'SteroidWarehouse', 'donalddrugs', 'RoleXx17', 'DutchGlory', 'Hofmanncrew', 'tomandjerry',
-        'ScotchAndCoca', 'StreetLegend','maxverstappen', 'EUROSHOPPER', 'DoctorXXL', 'Coffeshop', 'DutchPharmacy',
+        'ScotchAndCoca', 'StreetLegend', 'maxverstappen', 'EUROSHOPPER', 'DoctorXXL', 'Coffeshop', 'DutchPharmacy',
         'NarcoticsWorldwide', 'MisterX', 'DrugAmazon', 'loveloyalty', 'FGWL', 'Mont-Blanc', 'Island_Paradise',
 
         # Lithuania
