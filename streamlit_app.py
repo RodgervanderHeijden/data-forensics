@@ -1026,20 +1026,27 @@ elif chapter == '4. Advanced Insights':
     st.write(
         "In the previous graphs we have already seen that the offer of different categories of drugs differs between "
         "countries. But, to what extend? These following graphs delve deeper into that aspect. The first graph shows "
-        "the categories on the y-axis, with the countries of origin on the x-axis. The colorcoding is done by country "
-        "of origin, with the opacity (intensity of the color) being the number of offers. So, the United Kingdom and "
-        "the United States have a priority on Cannabis & Hash, while Germany and the Netherlands sell most of "
-        "Stimulants. "
+        "the categories on the y-axis, with the countries of origin on the x-axis. The color coding is done by country "
+        "of origin, with the opacity (intensity of the color) being the number of vendors active in that category. So, "
+        "the United Kingdom and the United States have a priority on Cannabis & Hash and Stimulants but score high in "
+        "a lot of categories while German drug dealers most frequently target the Stimulant market."
     )
 
-    strip = alt.Chart(df_drugs.fillna("Not provided")).mark_square(size=625).encode(
+    # For the next graph, we want to set out the country of origin along with the category, but have the intensity (opacity)
+    # be the number of vendors within tht (country:drug category) combination. This requires some ugly data engineering
+    # First: fill all missing data, then group by shipping_from, cat_lvl2 and the vendor and count the offers.
+    # Next, we reset the index again to group by shipping_from and cat_lvl_2 (omitting the vendor).
+    # Now we can count again, which will give us the number of vendors (as opposed to number of offers earlier)
+    df_country_drugs = df_drugs.fillna('Not provided').groupby(by=['shipping_from', 'category_level_2', 'vendor']).count().reset_index().groupby(by=['shipping_from', 'category_level_2']).count()
+
+    strip = alt.Chart(df_country_drugs.reset_index()).mark_square(size=625).encode(
         x=alt.X('shipping_from', title='Shipping from'),
         y=alt.Y('category_level_2', title='Category (level 2)'),
-        color='shipping_from',
-        opacity=alt.Opacity('count(vendor):Q', scale=alt.Scale(type='pow', clamp=False,
-                                                               bins=[0.1, 1, 10, 100, 500, 1000]),
+        color=alt.Color('shipping_from:N', legend=None),
+        opacity=alt.Opacity('vendor:Q', scale=alt.Scale(type='linear', clamp=True,
+                                                        domain=[25, 70]),
                             legend=None),
-        tooltip=[alt.Tooltip('count(vendor)', title='Number of offers'),
+        tooltip=[alt.Tooltip('vendor', title='Number of vendors'),
                  alt.Tooltip('category_level_2', title='Category lvl 2'),
                  alt.Tooltip('shipping_from', title='Country of origin')
                  ]
