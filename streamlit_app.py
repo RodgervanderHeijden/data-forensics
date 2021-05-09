@@ -1519,7 +1519,7 @@ elif chapter == '4. Advanced Insights':
         "indications that the verification levels and feedback affect the consumers in their behavior. These "
         "indicators of trustworthiness do not significantly benefit the vendors in terms of more sales per month.")
 
-    st.write('Pearson correlation matrix')
-    st.write(np.corrcoef(df_verification['feedback_positive_percentage'], df_verification['transactions_month']))
+#     st.write('Pearson correlation matrix')
+#     st.write(np.corrcoef(df_verification['feedback_positive_percentage'], df_verification['transactions_month']))
 
 
