@@ -404,7 +404,7 @@ if chapter == "3. Vendor Insights":
     st.header("Vendor insights")
     st.write('Here we describe the data about the individual vendors and showcase some interesting aspects we have found. '
              'We will first take a look at the number vendors over time. '
-             'Subsequently, we will dive into certain characteristics of vendors such as the rank and '
+             'Subsequently, we will delve into certain characteristics of vendors such as the rank and '
              'verification level. We will especially take a closer look at the top vendors on ToRReZ. '
              'Finally, we will go into the distributions of the transactions and offers per vendor to get a sense of the spread of the data.')
 
