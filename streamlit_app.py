@@ -1096,7 +1096,7 @@ elif chapter == '4. Advanced Insights':
 
     st.write(
         "In the previous graphs we have already seen that the offer of different categories of drugs differs between "
-        "countries. But, to what extend? These following graphs delve deeper into that aspect. The first graph shows "
+        "countries. But, to what extent? These following graphs delve deeper into that aspect. The first graph shows "
         "the categories on the y-axis, with the countries of origin on the x-axis. The color coding is done by country "
         "of origin, with the opacity (intensity of the color) being the number of vendors active in that category. So, "
         "the United Kingdom and the United States have a priority on Cannabis & Hash and Stimulants but score high in "
