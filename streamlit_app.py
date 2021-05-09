@@ -1474,7 +1474,7 @@ elif chapter == '4. Advanced Insights':
                     To make a fair comparison we computed the mean number of offers per category per verification level. 
                     The mean number of offers is mapped to the size as well as the color.
                     Although higher levels are scarce, we observe a difference in their product offerings. 
-                    The lower level vendors sell wide range of drugs while higher level vendors focus on specific categories. 
+                    The lower level vendors sell all kind of drugs while higher level vendors focus on specific categories. 
                     Furthermore, all low level vendors seem to focus on the popular categories (Cannabis & Hash) which is 
                     consistent with our findings in the previous chapter. Higher level vendors have different product offerings.
                     Especially the vendors in level 15 stand out with their extreme offer in Steroids.
@@ -1513,8 +1513,7 @@ elif chapter == '4. Advanced Insights':
         "measure of the strength of a linear association between two variables. A value greater than 0 indicates "
         "a positive association; if the value of one variables increases, so does the value of the other variable. "
         "The pearson correlation coefficient for the sales per month and the percentage of positive "
-        "feedback gives 0.0140. This indicates that there is a positive correlation but the correlation is very low which "
-        "means that there is no significant relationship. ")
+        "feedback gives 0.0140. This indicates that there is a positive correlation but the correlation is very low. ")
     st.write(
         "We can conclude that trust is not as important on ToRReZ as we expected it to be. There are no clear "
         "indications that the verification levels and feedback affect the consumers in their behavior. These "
