@@ -477,6 +477,9 @@ if chapter == "3. Vendor Insights":
              )
     df_vendors['verification'].fillna('Verification Level 0', inplace=True)
     df_vendors_TOP = df_vendors[df_vendors['rank']=='TOP']
+    now = pd.to_datetime('Apr 1, 2021')
+    df_vendors_TOP['num_months'] = (now.year - df_vendors_TOP.date.dt.year) * 12 + (now.month - df_vendors_TOP.date.dt.month)
+    df_vendors_TOP['transactions_month'] = df_vendors_TOP['transactions'] / df_vendors_TOP['num_months']
     st.write(df_vendors_TOP)
 
     st.write(" ")
